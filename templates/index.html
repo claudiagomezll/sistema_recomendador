@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDNM Designer | Serious Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .gradient-text { background: linear-gradient(135deg, #60A5FA, #A78BFA, #F472B6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 py-12">
+        <!-- Header -->
+        <header class="text-center mb-16">
+            <h1 class="text-5xl font-bold mb-4 gradient-text">EDNM Game Designer</h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto text-balance">
+                Genera diseños de juegos serios de alta fidelidad basados en el framework 
+                <strong>Elementos, Dinámicas, Narrativas y Mecánicas</strong>.
+            </p>
+        </header>
+
+        <!-- Main Input Section -->
+        <section class="mb-12">
+            <div class="glass p-8 rounded-2xl shadow-2xl">
+                <div class="flex items-center gap-3 mb-4 text-blue-400">
+                    <i data-lucide="sparkles"></i>
+                    <h2 class="text-xl font-semibold">¿Qué juego deseas diseñar?</h2>
+                </div>
+                <textarea id="promptInput" rows="4" 
+                    class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 mb-6"
+                    placeholder="Describe los objetivos, el público y el contexto de tu juego..."></textarea>
+                
+                <div class="flex justify-between items-center">
+                    <div id="statusMessage" class="text-sm text-slate-500 font-mono">Listo para diseñar.</div>
+                    <button id="generateBtn" 
+                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-all flex items-center gap-2 group">
+                        <span id="btnText">Generar Propuesta</span>
+                        <i data-lucide="arrow-right" class="group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading / Progress Section (Hidden by default) -->
+        <section id="loadingSection" class="hidden mb-12">
+            <div class="flex flex-col items-center justify-center p-12 glass rounded-2xl">
+                <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                <h3 class="text-2xl font-bold mb-2">Orquestando LLMs...</h3>
+                <p class="text-slate-400 animate-pulse">Analizando perspectivas EDNM y consultando modelos especializados.</p>
+            </div>
+        </section>
+
+        <!-- Results Section (Hidden by default) -->
+        <main id="resultsOutput" class="hidden space-y-16">
+            
+            <!-- 1. Full Analysis Table -->
+            <section>
+                <div class="flex items-center gap-3 mb-6">
+                    <i data-lucide="layers" class="text-purple-400"></i>
+                    <h2 class="text-3xl font-bold">1. Análisis Completo</h2>
+                </div>
+                <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-800/80 text-slate-300 text-sm uppercase tracking-wider">
+                            <tr>
+                                <th class="px-6 py-4">Perspectiva</th>
+                                <th class="px-6 py-4">Componente</th>
+                                <th class="px-6 py-4">Score</th>
+                                <th class="px-6 py-4">Análisis</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fullResultsTable" class="divide-y divide-slate-800">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 2. Winning Elements -->
+            <section>
+                <div class="flex items-center gap-3 mb-8">
+                    <i data-lucide="trophy" class="text-yellow-400"></i>
+                    <h2 class="text-3xl font-bold">2. Componentes Ganadores</h2>
+                </div>
+                <div id="winnersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Cards injected here -->
+                </div>
+            </section>
+
+            <!-- 3. Proposals -->
+            <section>
+                <div class="flex items-center gap-3 mb-6">
+                    <i data-lucide="book-open" class="text-emerald-400"></i>
+                    <h2 class="text-3xl font-bold">3. Propuesta de Diseño Integrada</h2>
+                </div>
+                <div id="proposalsContainer" class="space-y-8">
+                    <!-- Proposal cards injected here -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        const generateBtn = document.getElementById('generateBtn');
+        const promptInput = document.getElementById('promptInput');
+        const statusMessage = document.getElementById('statusMessage');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultsOutput = document.getElementById('resultsOutput');
+
+        const perspectiveIcons = {
+            'element': 'component',
+            'dynamic': 'activity',
+            'narrative': 'scroll',
+            'mechanic': 'settings'
+        };
+
+        const perspectiveColors = {
+            'element': 'text-blue-400',
+            'dynamic': 'text-rose-400',
+            'narrative': 'text-emerald-400',
+            'mechanic': 'text-orange-400'
+        };
+
+        generateBtn.addEventListener('click', async () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) return alert('Por favor, describe tu idea de juego.');
+
+            // UI State
+            generateBtn.disabled = true;
+            generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            loadingSection.classList.remove('hidden');
+            resultsOutput.classList.add('hidden');
+            statusMessage.innerText = "Consultando con la IA (Esto puede tardar unos segundos)...";
+
+            try {
+                const response = await fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt, user_id: 1 })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                renderResults(data);
+                
+                loadingSection.classList.add('hidden');
+                resultsOutput.classList.remove('hidden');
+                statusMessage.innerText = "Propuesta generada con éxito.";
+            } catch (error) {
+                console.error(error);
+                statusMessage.innerText = "Error: " + error.message;
+                alert('Hubo un error al generar la propuesta. Revisa la consola.');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+
+        function renderResults(data) {
+            // 1. Full Results Table
+            const tableBody = document.getElementById('fullResultsTable');
+            tableBody.innerHTML = data.results.map(item => `
+                <tr class="hover:bg-slate-800/30 transition-colors">
+                    <td class="px-6 py-4 font-semibold ${perspectiveColors[item.perspective] || ''}">${item.perspective.toUpperCase()}</td>
+                    <td class="px-6 py-4 font-medium">${item.title}</td>
+                    <td class="px-6 py-4 font-mono text-sm text-slate-400">${item.rank_score.toFixed(3)}</td>
+                    <td class="px-6 py-4 text-sm text-slate-400 line-clamp-2 max-w-xs" title="${item.llm_reasoning}">${item.llm_reasoning}</td>
+                </tr>
+            `).join('');
+
+            // 2. Winners Grid
+            const winnersGrid = document.getElementById('winnersGrid');
+            winnersGrid.innerHTML = Object.entries(data.synthesis.winners).map(([cat, content]) => {
+                const title = content.split(' - ')[0];
+                const reason = content.split(' - ')[1] || '';
+                return `
+                    <div class="glass p-6 rounded-xl border-t-4 border-t-${perspectiveColors[cat].replace('text-', '')}">
+                        <div class="flex items-center gap-2 mb-3 ${perspectiveColors[cat]}">
+                            <i data-lucide="${perspectiveIcons[cat] || 'package'}"></i>
+                            <span class="text-xs font-bold uppercase tracking-wider">${cat}</span>
+                        </div>
+                        <h4 class="text-xl font-bold mb-2">${title}</h4>
+                        <p class="text-sm text-slate-400 font-light leading-relaxed">${reason}</p>
+                    </div>
+                `;
+            }).join('');
+
+            // 3. Proposals
+            const container = document.getElementById('proposalsContainer');
+            container.innerHTML = Object.entries(data.synthesis.proposals).map(([model, text]) => `
+                <div class="glass p-8 rounded-2xl group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i data-lucide="cpu" size="64"></i>
+                    </div>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-2 h-8 bg-emerald-500 rounded-full"></div>
+                        <h3 class="text-2xl font-bold tracking-tight">Propuesta de ${model.toUpperCase()}</h3>
+                    </div>
+                    <div class="prose prose-invert prose-emerald max-w-none text-slate-300 leading-relaxed font-light">
+${marked.parse(text)}
+                    </div>
+                </div>
+            `).join('');
+
+            // Re-initialize icons for new elements
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+pandas
+numpy
+chromadb
+sentence-transformers
+openai
+anthropic
+google-genai
+python-dotenv
+rapidfuzz
+scipy
+scikit-learn
+requests

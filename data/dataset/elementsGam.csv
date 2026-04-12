@@ -1,0 +1,27 @@
+elementId;elementGam
+1;Images of mine sectors and hazard icons
+2;Safety indicator meter
+3;Interactive map with risk zones
+4;Timer indicating atmospheric stability
+5;Alarm signal lights and sounds
+6;Feedback panel showing atmosphere status
+7;Color-coded warning system
+8;Safety indicator meter
+18;Interactive map showing risk zones
+19;Surface stability indicator
+20;Timer indicating safe descent window
+21;Warning symbols appearing when slipping
+23;Progress bar showing descent completion
+24;Warning symbols appearing when slipping
+27;On-screen blind-spot detector
+28;Load-stability gauge linked to cargo weight
+29;Color-coded path signals for safe vs unsafe segments
+30;Feedback icons for good or unsafe decisions
+31;Timer showing remaining safe window before conditions worsen
+32;Rollover-risk indicator
+33;Dynamic map with safe and critical oxygen zones and timer indicating remaining safe oxygen exposure
+34;Oxygen saturation bar / hypoxia risk meter and ventilation arrows showing airflow direction
+35;Color-coded markers for safe exits and flashing icons when oxygen reaches danger levels
+40;Maps identifying danger zones around machinery and flowchart of lockout?tagout sequence
+41;Questionnaires reinforcing inhibition-based decision-making and visual risk panels that flash when unsafe shortcuts appear
+42;Warning icons showing probable injury if routine behavior is followed

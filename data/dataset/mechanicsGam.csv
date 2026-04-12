@@ -1,0 +1,31 @@
+mechanicId;mechanicGam
+1;Write hazard
+2;Move to inspect ventilation points
+3;Recognition of acoustic signals
+4;Match hazard
+5;Time-based decision making (timer + alarms)
+6;Move to avoid danger 
+7;Build safety plans using map overlays
+8;See?Listen integration tasks combining images and sound warnings
+9;Avoid hazardous low-oxygen pockets
+10;Collect to navigate unstable slopes and gather certified safety items
+11;Using the map to select a safe route under time pressure
+12;Exit within safe limit
+13;Collect certified safety items
+14;Identify safe footholds
+15;Maneuvering a loader downhill without exceeding safe speed
+16;Avoiding pedestrians (NPC helpers) that appear near the equipment
+17;Identify traffic conflicts or unstable edges
+18;Performing exit maneuvers before vehicle rollover threshold is met
+19;Move and avoid unstable terrain, blind spots and equipment
+20;Using the map to select a safe route under time pressure
+21;Select and match correct ventilation paths using environmental cues
+22;Puzzle-solving to activate ventilation points
+23;Map-based route selection under time pressure
+24;Visual scanning to detect safe markers
+25;Escape before oxygen drops below threshold
+26;Select hazardous conditions from images
+27;Avoid danger zones
+28;Move only after verification
+29;Avoid blocking steps
+30;Write exit route
