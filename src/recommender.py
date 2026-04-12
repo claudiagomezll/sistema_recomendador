@@ -18,6 +18,37 @@ class RecommenderOrchestrator:
         self.user_id_map = user_id_map
         self.item_id_map = item_id_map
         self.encoder = get_encoder()
+        self.current_research_context = None
+
+    def extract_research_parameters(self, query):
+        if VERBOSE: print("🧬 Extrayendo parámetros científicos de investigación...")
+        prompt = PROMPT_TEMPLATES['research_extraction'].format(query=query)
+        
+        # Use a reliable LLM for extraction (e.g. gpt4o_mini or the first active one)
+        llm_name = list(ACTIVE_LLMS.keys())[0]
+        cfg = ACTIVE_LLMS[llm_name]
+        provider = create_llm_provider(cfg['provider'], cfg['model'], api_key=cfg['api_key'])
+        
+        try:
+            raw_response = provider.generate(prompt)
+            import json
+            import re
+            # Extract JSON block
+            json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
+            if json_match:
+                self.current_research_context = json.loads(json_match.group(0))
+            else:
+                self.current_research_context = json.loads(raw_response)
+            
+            if VERBOSE: print(f"   ✅ Parámetros extraídos: {self.current_research_context.get('Cognitive_Function', 'N/A')} | {self.current_research_context.get('VARK_Style', 'N/A')}")
+        except Exception as e:
+            if VERBOSE: print(f"   ⚠️ Error extrayendo parámetros: {e}")
+            self.current_research_context = {
+                "Sector": "General", "Context": "Gaming", "Users": "Players",
+                "Learning_Objective": query, "Cognitive_Function": "General",
+                "Emotion": "Engagement", "VARK_Style": "Multi-modal"
+            }
+        return self.current_research_context
 
     def query_all_llms(self, query, candidates, perspective=None, json_mode=True):
         if perspective and perspective in PROMPT_TEMPLATES:
@@ -220,12 +251,31 @@ class RecommenderOrchestrator:
 
         # 4. Generate synthesis with all configured models
         # Ensure we have defaults if a category was missed
+        
+        # Extract research context if not present
+        if not hasattr(self, 'current_research_context') or not self.current_research_context:
+            self.extract_research_parameters(query)
+
+        ctx = self.current_research_context
         synthesis_prompt = PROMPT_TEMPLATES['synthesis'].format(
             element=winners.get('element', 'N/A'),
             dynamic=winners.get('dynamic', 'N/A'),
             narrative=winners.get('narrative', 'N/A'),
             mechanic=winners.get('mechanic', 'N/A'),
-            query=query
+            query=query,
+            Sector=ctx.get('Sector', 'General'),
+            Context=ctx.get('Context', 'Gaming'),
+            Users=ctx.get('Users', 'Players'),
+            Capability=ctx.get('Capability', 'General'),
+            Learning_Objective=ctx.get('Learning_Objective', query),
+            Cognitive_Function=ctx.get('Cognitive_Function', 'General'),
+            Emotion=ctx.get('Emotion', 'Engagement'),
+            VARK_Style=ctx.get('VARK_Style', 'Multi-modal'),
+            Learning_Activities=ctx.get('Learning_Activities', 'Gameplay'),
+            Learning_Resources=ctx.get('Learning_Resources', 'Game elements'),
+            Serious_Game_Type=ctx.get('Serious_Game_Type', 'Educational'),
+            Motivation=ctx.get('Motivation', 'Intrinsic'),
+            User_Profile=ctx.get('User_Profile', 'Standard')
         )
         
         raw_proposals = self.query_all_llms(synthesis_prompt, [], json_mode=False)
@@ -298,5 +348,6 @@ class RecommenderOrchestrator:
             
         return {
             "winners": winners,
-            "proposals": clean_proposals
+            "proposals": clean_proposals,
+            "research_context": self.current_research_context
         }

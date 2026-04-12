@@ -83,41 +83,63 @@ Query: {query}
 Select the top 3 items that best implement game MECHANICS for this query.
 Return JSON: [{{"recommendation": "Title", "description": "Why (mechanics focus)", "ranking": 1}}, ...]""",
 
-    'synthesis': """*** ATENCIÓN: RESPONDE ÚNICAMENTE EN ESPAÑOL. EL IDIOMA DE SALIDA DEBE SER 100% ESPAÑOL. ***
-Actúa como un Diseñador Maestro de Juegos Serios (Senior Game Designer).
-Tu tarea es generar una Propuesta de Diseño Narrativa EXCLUSIVAMENTE EN ESPAÑOL que integre estos 4 pilares:
-- ELEMENTO (UI/Ítems): {element}
-- DINÁMICA (Psicología/Emoción): {dynamic}
-- NARRATIVA (Historia/Mundo): {narrative}
-- MECÁNICA (Reglas/Interacción): {mechanic}
+    'research_extraction': """Analyze the following user design request and extract the parameters for a scientific serious game proposal.
+Input: {query}
 
-Requerimientos del Usuario: {query}
+Instructions:
+1. Infer the sector, context, and learning objectives.
+2. Assign a likely Cognitive Function (Perception, Attention, Memory, Inhibitory Control, Working Memory, or Cognitive Flexibility).
+3. Assign a target Emotion (anger, disgust, fear, happiness, sadness, or surprise).
+4. Assign a VARK style (Visual, Aural, Read/Write, or Kinesthetic).
+5. Define necessary Learning Activities and Resources.
 
-**INSTRUCCIONES CRÍTICAS (SÍGUELAS AL PIE DE LA LETRA):**
-1. IDIOMA: ESPAÑOL (PROHIBIDO EL INGLÉS).
-2. FORMATO: Markdown limpio (Sin bloques de código JSON).
-3. ESTRUCTURA: Usa los encabezados indicados abajo.
+Return ONLY a valid JSON object with these keys: 
+Sector, Context, Users, Capability, Learning_Objective, Cognitive_Function, Emotion, VARK_Style, Learning_Activities, Learning_Resources, Serious_Game_Type, Motivation, User_Profile.""",
 
-**ESTRUCTURA DE LA PROPUESTA (ESCRIBE TODO EN ESPAÑOL):**
+    'synthesis': """*** ATENCIÓN: RESPONDE ÚNICAMENTE EN ESPAÑOL. ***
+You are an expert recommendation system for gamified serious games, with knowledge in cognitive science, gamification, and instructional design.
 
-# 🎮 PROPUESTA DE JUEGO: [Crea un nombre creativo aquí]
+## Scientific Configuration:
+- Sector: {Sector} | Context: {Context} | Users: {Users}
+- Learning Objective: {Learning_Objective}
+- Cognitive Function: {Cognitive_Function}
+- Emotion: {Emotion} | VARK Style: {VARK_Style}
+- User Profile: {User_Profile}
 
-### 🌍 EL MUNDO Y LA ATMÓSFERA
-Describe el entorno narrativo y el tono de la historia.
+## Reference Components (from our research):
+- Selected MECHANICS: {mechanic}
+- Selected ELEMENTS: {element}
+- Selected NARRATIVE: {narrative}
+- Selected DYNAMICS: {dynamic}
 
-### 🧠 PSICOLOGÍA DEL FLUJO (DINÁMICAS)
-Explica cómo las DINÁMICAS mencionadas crean la experiencia emocional.
+## Instructions:
+1. Design a comprehensive serious game proposal based on THESE specific scientific parameters.
+2. Use the "Gameplay Bricks Model" (Álvarez) to align mechanics with cognitive functions.
+3. The narrative must be immersive, reflect the sector, and trigger the target emotion without trauma.
+4. Integrate the Learning Activities and Resources into the mechanics and elements.
 
-### 🛠️ LAS HERRAMIENTAS DE SUPERVIVENCIA (ELEMENTOS)
-Describe cómo los ELEMENTOS aparecen en el mundo.
+## Output Format (Respond in Spanish):
+# 🎮 PROYECTO: [Nombre]
 
-### ⚙️ EL RITMO DEL JUEGO (MECÁNICAS)
-Explica el ciclo de juego integrando las MECÁNICAS.
+### 📊 FICHA TÉCNICA PEDAGÓGICA
+- **Objetivo**: {Learning_Objective}
+- **Función Cognitiva**: {Cognitive_Function}
+- **Estilo VARK**: {VARK_Style}
+- **Emoción Diana**: {Emotion}
 
-### 🕹️ "UN DÍA EN LA PARTIDA" (NARRATIVA EN ACCIÓN)
-Una descripción vívida de un momento del juego.
+### 🌍 MUNDO Y NARRATIVA
+[Descripción inmersiva del {Context}]
 
-*** RECORDATORIO FINAL: TODA LA RESPUESTA DEBE ESTAR EN ESPAÑOL. ***"""
+### 🧠 PSICOLOGÍA Y DINÁMICAS
+[Cómo se aplican las dinámicas para la {Cognitive_Function}]
+
+### ⚙️ MECÁNICAS E INSTRUCCIÓN
+[Detalle del gameplay loop integrando {Learning_Activities}]
+
+### 🕹️ DISEÑO DE INTERFAZ (ELEMENTOS)
+[Descripción de los elementos basados en {Learning_Resources}]
+
+*** RECORDATORIO: TODA LA RESPUESTA DEBE ESTAR EN ESPAÑOL. ***"""
 }
 
 # Configuration Constants

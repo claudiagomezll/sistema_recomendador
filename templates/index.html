@@ -65,6 +65,17 @@
         <!-- Results Section (Hidden by default) -->
         <main id="resultsOutput" class="hidden space-y-16">
             
+            <!-- 0. Research Technical Sheet -->
+            <section id="researchSection" class="hidden">
+                <div class="flex items-center gap-3 mb-6">
+                    <i data-lucide="microscope" class="text-blue-400"></i>
+                    <h2 class="text-3xl font-bold">Concepto de Investigación Científica</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="researchGrid">
+                    <!-- Research parameters injected here -->
+                </div>
+            </section>
+            
             <!-- 1. Full Analysis Table -->
             <section>
                 <div class="flex items-center gap-3 mb-6">
@@ -218,6 +229,33 @@ ${marked.parse(text)}
                     </div>
                 </div>
             `).join('');
+
+            // 0. Research Context
+            const researchSection = document.getElementById('researchSection');
+            const researchGrid = document.getElementById('researchGrid');
+            if (data.synthesis.research_context) {
+                researchSection.classList.remove('hidden');
+                const ctx = data.synthesis.research_context;
+                const relevantFields = [
+                    { label: 'Función Cognitiva', val: ctx.Cognitive_Function, icon: 'brain' },
+                    { label: 'Estilo VARK', val: ctx.VARK_Style, icon: 'eye' },
+                    { label: 'Emoción Diana', val: ctx.Emotion, icon: 'heart' },
+                    { label: 'Sector', val: ctx.Sector, icon: 'briefcase' },
+                    { label: 'Objetivo', val: ctx.Learning_Objective, icon: 'target' },
+                    { label: 'Perfil Usuario', val: ctx.User_Profile, icon: 'users' }
+                ];
+                researchGrid.innerHTML = relevantFields.map(f => `
+                    <div class="glass p-4 rounded-xl flex items-start gap-3 border-l-4 border-blue-500">
+                        <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                            <i data-lucide="${f.icon}" size="18"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">${f.label}</p>
+                            <p class="text-sm font-semibold text-slate-200">${f.val || 'N/A'}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
 
             // Re-initialize icons for new elements
             lucide.createIcons();
