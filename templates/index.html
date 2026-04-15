@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,25 +9,93 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        body { font-family: 'Outfit', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .gradient-text { background: linear-gradient(135deg, #60A5FA, #A78BFA, #F472B6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    <style type="text/tailwindcss">
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #60A5FA, #A78BFA, #F472B6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .expert-input {
+            @apply w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none;
+        }
+
+        select.expert-input {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360A5FA'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2em;
+            padding-right: 3rem;
+        }
+
+        select.expert-input option {
+            @apply bg-slate-900 text-slate-200;
+        }
+
+        .expert-label {
+            @apply text-[11px] uppercase tracking-widest text-blue-400 font-bold mb-3 flex items-center gap-2;
+        }
+
+        .section-card {
+            @apply bg-slate-900/40 border border-white/10 rounded-2xl p-8 mb-8 shadow-inner;
+        }
+
+        .icon-box {
+            @apply p-2 bg-slate-800 rounded-lg text-blue-400 flex items-center justify-center;
+        }
     </style>
 </head>
+
 <body class="bg-slate-950 text-slate-100 min-h-screen">
     <div class="max-w-6xl mx-auto px-4 py-12">
         <!-- Header -->
         <header class="text-center mb-16">
             <h1 class="text-5xl font-bold mb-4 gradient-text">EDNM Game Designer</h1>
             <p class="text-slate-400 text-lg max-w-2xl mx-auto text-balance">
-                Genera diseños de juegos serios de alta fidelidad basados en el framework 
+                Genera diseños de juegos serios de alta fidelidad basados en el framework
                 <strong>Elementos, Dinámicas, Narrativas y Mecánicas</strong>.
             </p>
         </header>
@@ -34,17 +103,194 @@
         <!-- Main Input Section -->
         <section class="mb-12">
             <div class="glass p-8 rounded-2xl shadow-2xl">
-                <div class="flex items-center gap-3 mb-4 text-blue-400">
-                    <i data-lucide="sparkles"></i>
-                    <h2 class="text-xl font-semibold">¿Qué juego deseas diseñar?</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-3 text-blue-400">
+                        <i data-lucide="sparkles"></i>
+                        <h2 class="text-xl font-semibold">Configuración de Diseño</h2>
+                    </div>
+                    <button id="toggleMode"
+                        class="text-xs px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all flex items-center gap-2">
+                        <i data-lucide="settings-2" size="14"></i>
+                        <span>Modo Experto (Investigación)</span>
+                    </button>
                 </div>
-                <textarea id="promptInput" rows="4" 
-                    class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 mb-6"
-                    placeholder="Describe los objetivos, el público y el contexto de tu juego..."></textarea>
-                
+
+                <!-- Simple Mode -->
+                <div id="simpleMode">
+                    <textarea id="promptInput" rows="4"
+                        class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 mb-6"
+                        placeholder="Describe los objetivos, el público y el contexto de tu juego..."></textarea>
+                </div>
+
+                <!-- Expert Mode (Hidden by default) -->
+                <div id="expertMode" class="hidden space-y-6 mb-8 mt-2">
+
+                    <!-- Section 1: Contexto & Usuario -->
+                    <div class="section-card">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="icon-box">
+                                <i data-lucide="file-text" size="20"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-200">Entradas del Contexto</h3>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="expert-label">Contexto</label>
+                                <textarea id="exp_Context" class="expert-input h-32"
+                                    placeholder="Describa el entorno, desafíos y marco teórico de la investigación..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="space-y-2">
+                                <label class="expert-label">Sector</label>
+                                <input id="exp_Sector" class="expert-input" placeholder="Ej: Educación Superior">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Usuarios Target</label>
+                                <input id="exp_Users" class="expert-input" placeholder="Ej: Estudiantes de Ing.">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Capacidad a Desarrollar</label>
+                                <input id="exp_Capability" class="expert-input"
+                                    placeholder="Ej: Competencia específica">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="expert-label">Objetivo de Aprendizaje</label>
+                                <input id="exp_Learning_Objective" class="expert-input"
+                                    placeholder="Ej: Reforzar atención selectiva">
+                            </div>
+
+                        </div>
+                    </div>
+
+
+                    <!-- Section 3: Diseño Técnico -->
+                    <div class="section-card">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="icon-box text-purple-400">
+                                <i data-lucide="pen-tool" size="20"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-200">Diseño del Juego Serio</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                            <div class="space-y-2">
+                                <label class="expert-label">Juego Serio</label>
+                                <input id="exp_Serious_Game_Type" class="expert-input" placeholder="Ej: Aventura">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Actividades de Aprendizaje</label>
+                                <input id="exp_Learning_Activities" class="expert-input"
+                                    placeholder="Ver, construir, escuchar...">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Recursos de Aprendizaje</label>
+                                <input id="exp_Learning_Resources" class="expert-input"
+                                    placeholder="Mapas, temporizadores, señales...">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Mecánicas Básicas (Gameplay Bricks)</label>
+                                <input id="exp_Basic_Mechanics" class="expert-input border-blue-500/30"
+                                    placeholder="Escribir y emparejar">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Usuario -->
+                    <div class="section-card">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="icon-box">
+                                <i data-lucide="file-text" size="20"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-slate-200">Entradas para el Perfilamiento de Usuario</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Nivel 1: Tipo de Función -->
+                            <div class="space-y-3">
+                                <label class="expert-label">Tipo Función Cognitiva</label>
+                                <select id="exp_Cognitive_Level" class="expert-input">
+                                    <option value="" selected disabled>Seleccione nivel...</option>
+                                    <option value="Basic">Básica</option>
+                                    <option value="Complex">Compleja</option>
+                                </select>
+                            </div>
+
+                            <!-- Nivel 2: Función específica -->
+                            <div id="cognitiveFuncContainer"
+                                class="space-y-3 opacity-50 pointer-events-none transition-all">
+                                <label class="expert-label">Función Cognitiva</label>
+                                <select id="exp_Cognitive_Function" class="expert-input">
+                                    <option value="" selected disabled>Primero elija nivel...</option>
+                                </select>
+                            </div>
+
+                            <!-- Nivel 3: Funciones Ejecutivas (Solo si se elige Executive en Nivel 2) -->
+                            <div id="executiveFuncContainer" class="space-y-3 hidden transition-all">
+                                <label class="expert-label">Función Ejecutiva</label>
+                                <select id="exp_Cognitive_Exec" class="expert-input">
+                                    <option value="" selected disabled>Elegir función...</option>
+                                    <option value="Inhibitory Control">Inhibitory Control</option>
+                                    <option value="Working Memory">Working Memory</option>
+                                    <option value="Cognitive Flexibility">Cognitive Flexibility</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                            <div class="space-y-3">
+                                <label class="expert-label">Emoción</label>
+                                <select id="exp_Emotion" class="expert-input">
+                                    <option value="" selected disabled>Seleccione emoción...</option>
+                                    <option value="anger">Anger (Ira)</option>
+                                    <option value="disgust">Disgust (Asco)</option>
+                                    <option value="fear">Fear (Miedo)</option>
+                                    <option value="happiness">Happiness (Alegría)</option>
+                                    <option value="sadness">Sadness (Tristeza)</option>
+                                    <option value="surprise">Surprise (Sorpresa)</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="expert-label">Motivación Predominante</label>
+                                <select id="exp_Motivation" class="expert-input">
+                                    <option value="" selected disabled>Seleccione motivación...</option>
+                                    <option value="Intrínseca">Intrínseca</option>
+                                    <option value="Extrínseca">Extrínseca</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="expert-label">Estilo Aprendizaje VARK</label>
+                                <select id="exp_VARK_Style" class="expert-input">
+                                    <option value="" disabled selected>Seleccione un estilo...</option>
+                                    <option value="Visual">Visual</option>
+                                    <option value="Auditivo">Auditivo</option>
+                                    <option value="Lecto-Escritor">Lecto-Escritor</option>
+                                    <option value="Kinestésico">Kinestésico</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6 mt-6">
+                            <div class="space-y-3">
+                                <label class="expert-label">Perfil del Usuario</label>
+                                <textarea id="exp_User_Profile" class="expert-input h-32"
+                                    placeholder="Características psicográficas, demográficas y necesidades específicas del usuario..."></textarea>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
                 <div class="flex justify-between items-center">
-                    <div id="statusMessage" class="text-sm text-slate-500 font-mono">Listo para diseñar.</div>
-                    <button id="generateBtn" 
+                    <div id="statusMessage" class="text-sm text-slate-500 font-mono">Modo: Estándar</div>
+                    <button id="generateBtn"
                         class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-all flex items-center gap-2 group">
                         <span id="btnText">Generar Propuesta</span>
                         <i data-lucide="arrow-right" class="group-hover:translate-x-1 transition-transform"></i>
@@ -56,15 +302,17 @@
         <!-- Loading / Progress Section (Hidden by default) -->
         <section id="loadingSection" class="hidden mb-12">
             <div class="flex flex-col items-center justify-center p-12 glass rounded-2xl">
-                <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6">
+                </div>
                 <h3 class="text-2xl font-bold mb-2">Orquestando LLMs...</h3>
-                <p class="text-slate-400 animate-pulse">Analizando perspectivas EDNM y consultando modelos especializados.</p>
+                <p class="text-slate-400 animate-pulse">Analizando perspectivas EDNM y consultando modelos
+                    especializados.</p>
             </div>
         </section>
 
         <!-- Results Section (Hidden by default) -->
         <main id="resultsOutput" class="hidden space-y-16">
-            
+
             <!-- 0. Research Technical Sheet -->
             <section id="researchSection" class="hidden">
                 <div class="flex items-center gap-3 mb-6">
@@ -75,7 +323,7 @@
                     <!-- Research parameters injected here -->
                 </div>
             </section>
-            
+
             <!-- 1. Full Analysis Table -->
             <section>
                 <div class="flex items-center gap-3 mb-6">
@@ -148,29 +396,109 @@
             'mechanic': 'text-orange-400'
         };
 
+        // Expert Mode Toggle
+        let isExpertMode = false;
+        const toggleBtn = document.getElementById('toggleMode');
+        const simpleMode = document.getElementById('simpleMode');
+        const expertMode = document.getElementById('expertMode');
+
+        toggleBtn.addEventListener('click', () => {
+            isExpertMode = !isExpertMode;
+            simpleMode.classList.toggle('hidden', isExpertMode);
+            expertMode.classList.toggle('hidden', !isExpertMode);
+            toggleBtn.querySelector('span').innerText = isExpertMode ? 'Modo Simple' : 'Modo Experto (Investigación)';
+            toggleBtn.classList.toggle('bg-blue-500/20', !isExpertMode);
+            toggleBtn.classList.toggle('bg-purple-500/20', isExpertMode);
+            statusMessage.innerText = isExpertMode ? "Modo: Experto (Datos de Entrada Estructurados)" : "Modo: Estándar";
+        });
+
+        // Cascading Dropdown Logic for Cognitive Functions
+        const cognitiveMap = {
+            "Basic": ["Perception", "Attention", "Memory"],
+            "Complex": ["Praxia", "Language", "Executive Functions"]
+        };
+
+        const cognitiveLevel = document.getElementById('exp_Cognitive_Level');
+        const cognitiveFunc = document.getElementById('exp_Cognitive_Function');
+        const cognitiveExec = document.getElementById('exp_Cognitive_Exec');
+        const cognitiveContainer = document.getElementById('cognitiveFuncContainer');
+        const executiveContainer = document.getElementById('executiveFuncContainer');
+
+        cognitiveLevel.addEventListener('change', () => {
+            const level = cognitiveLevel.value;
+            const options = cognitiveMap[level] || [];
+
+            cognitiveFunc.innerHTML = '<option value="" selected disabled>Elija función específica...</option>' +
+                options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+            cognitiveContainer.classList.remove('opacity-50', 'pointer-events-none');
+            executiveContainer.classList.add('hidden');
+            cognitiveExec.value = "";
+        });
+
+        cognitiveFunc.addEventListener('change', () => {
+            if (cognitiveFunc.value === "Executive Functions") {
+                executiveContainer.classList.remove('hidden');
+            } else {
+                executiveContainer.classList.add('hidden');
+                cognitiveExec.value = "";
+            }
+        });
+
         generateBtn.addEventListener('click', async () => {
             const prompt = promptInput.value.trim();
-            if (!prompt) return alert('Por favor, describe tu idea de juego.');
+            let researchData = null;
+
+            if (isExpertMode) {
+                // Determine the most specific cognitive function selected
+                let finalCognitiveFunc = cognitiveFunc.value;
+                if (cognitiveFunc.value === "Executive Functions" && cognitiveExec.value) {
+                    finalCognitiveFunc = cognitiveExec.value;
+                }
+
+                researchData = {
+                    Context: document.getElementById('exp_Context').value,
+                    Sector: document.getElementById('exp_Sector').value,
+                    Users: document.getElementById('exp_Users').value,
+                    Capability: document.getElementById('exp_Capability').value,
+                    Learning_Objective: document.getElementById('exp_Learning_Objective').value,
+                    Cognitive_Function: finalCognitiveFunc,
+                    Emotion: document.getElementById('exp_Emotion').value,
+                    VARK_Style: document.getElementById('exp_VARK_Style').value,
+                    Learning_Activities: document.getElementById('exp_Learning_Activities').value,
+                    Learning_Resources: document.getElementById('exp_Learning_Resources').value,
+                    Serious_Game_Type: document.getElementById('exp_Serious_Game_Type').value,
+                    Basic_Mechanics: document.getElementById('exp_Basic_Mechanics').value,
+                    Motivation: document.getElementById('exp_Motivation').value,
+                    User_Profile: document.getElementById('exp_User_Profile').value
+                };
+            }
+
+            if (!prompt && !isExpertMode) return alert('Por favor, describe tu idea de juego.');
 
             // UI State
             generateBtn.disabled = true;
             generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
             loadingSection.classList.remove('hidden');
             resultsOutput.classList.add('hidden');
-            statusMessage.innerText = "Consultando con la IA (Esto puede tardar unos segundos)...";
+            statusMessage.innerText = isExpertMode ? "Calculando con items de investigación..." : "Consultando con la IA (Esto puede tardar unos segundos)...";
 
             try {
                 const response = await fetch('/api/recommend', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt, user_id: 1 })
+                    body: JSON.stringify({
+                        prompt: prompt || (isExpertMode ? researchData.Learning_Objective : 'Diseño Especializado'),
+                        user_id: 1,
+                        research_data: researchData
+                    })
                 });
 
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
 
                 renderResults(data);
-                
+
                 loadingSection.classList.add('hidden');
                 resultsOutput.classList.remove('hidden');
                 statusMessage.innerText = "Propuesta generada con éxito.";
@@ -262,4 +590,5 @@ ${marked.parse(text)}
         }
     </script>
 </body>
+
 </html>

@@ -20,6 +20,13 @@ class RecommenderOrchestrator:
         self.encoder = get_encoder()
         self.current_research_context = None
 
+    def set_research_context(self, research_data):
+        """Manually sets the research context from structured expert input."""
+        if VERBOSE: print("🧪 Cargando contexto de investigación manual (Modo Experto)...")
+        # Ensure keys match expected template placeholders
+        self.current_research_context = research_data
+        return self.current_research_context
+
     def extract_research_parameters(self, query):
         if VERBOSE: print("🧬 Extrayendo parámetros científicos de investigación...")
         prompt = PROMPT_TEMPLATES['research_extraction'].format(query=query)
@@ -166,9 +173,23 @@ class RecommenderOrchestrator:
                             print(f"      ✅ Validado: {valid_item['title']} (Score: {sim_norm:.3f})")
         return validated
 
-    def recommend(self, query, user_id=None, top_k=3):
-        if VERBOSE: print(f"🚀 Iniciando recomendación multi-perspectiva (EDNM) para: '{query}'")
+    def recommend(self, query, user_id=None, top_k=3, research_data=None):
+        """
+        Calcula recomendaciones híbridas integrando RAG y Filtrado Colaborativo.
+        Si se provee research_data, se usa para el contexto científico.
+        """
+        if research_data:
+            self.set_research_context(research_data)
+            # Use specific fields from research_data to improve search
+            search_query = f"{research_data.get('Learning_Objective', '')} {research_data.get('Cognitive_Function', '')} {query}".strip()
+        else:
+            self.extract_research_parameters(query)
+            search_query = query
         
+        if VERBOSE:
+            print(f"🚀 Iniciando recomendación multi-perspectiva (EDNM) para: '{query}'")
+            if research_data: print(f"   🧬 Modo Experto activado: Objetivo '{self.current_research_context.get('Learning_Objective')}'")
+
         # 1. Weights
         weights = calculate_weights(user_id, self.ratings_df)
         
@@ -180,8 +201,8 @@ class RecommenderOrchestrator:
         for p in perspectives:
             if VERBOSE: print(f"   🔍 Procesando perspectiva: {p.upper()}...")
             
-            # Filtered retrieval: only items of type 'p'
-            candidates = rag_retrieval(query, self.collection, top_k=20, where={"item_type": p})
+            # Filtered retrieval using the enriched search_query
+            candidates = rag_retrieval(search_query, self.collection, top_k=20, where={"item_type": p})
             
             if candidates.empty:
                 if VERBOSE: print(f"      ⚠️ No se encontraron candidatos de tipo '{p}'")
@@ -257,25 +278,37 @@ class RecommenderOrchestrator:
             self.extract_research_parameters(query)
 
         ctx = self.current_research_context
+        
+        # Build the specific research master prompt requested by the user
+        master_prompt = PROMPT_TEMPLATES['research_master_template'].format(
+            Sector=ctx.get('Sector', 'General'),
+            Context=ctx.get('Context', 'N/A'),
+            Serious_Game_Type=ctx.get('Serious_Game_Type', 'Adventure'),
+            Users=ctx.get('Users', 'Players'),
+            Learning_Objective=ctx.get('Learning_Objective', query),
+            Cognitive_Function=ctx.get('Cognitive_Function', 'General'),
+            Capability=ctx.get('Capability', 'General'),
+            VARK_Style=ctx.get('VARK_Style', 'Visual/Aural'),
+            Emotion=ctx.get('Emotion', 'Engagement'),
+            Motivation=ctx.get('Motivation', 'Intrinsic'),
+            Learning_Activities=ctx.get('Learning_Activities', 'Gameplay'),
+            Learning_Resources=ctx.get('Learning_Resources', 'Game elements'),
+            Basic_Mechanics=ctx.get('Basic_Mechanics', 'Interaction')
+        )
+        
         synthesis_prompt = PROMPT_TEMPLATES['synthesis'].format(
+            master_prompt=master_prompt,
             element=winners.get('element', 'N/A'),
             dynamic=winners.get('dynamic', 'N/A'),
             narrative=winners.get('narrative', 'N/A'),
             mechanic=winners.get('mechanic', 'N/A'),
-            query=query,
-            Sector=ctx.get('Sector', 'General'),
             Context=ctx.get('Context', 'Gaming'),
-            Users=ctx.get('Users', 'Players'),
-            Capability=ctx.get('Capability', 'General'),
-            Learning_Objective=ctx.get('Learning_Objective', query),
             Cognitive_Function=ctx.get('Cognitive_Function', 'General'),
+            Sector=ctx.get('Sector', 'General'),
+            Users=ctx.get('Users', 'Players'),
+            Learning_Objective=ctx.get('Learning_Objective', query),
             Emotion=ctx.get('Emotion', 'Engagement'),
-            VARK_Style=ctx.get('VARK_Style', 'Multi-modal'),
-            Learning_Activities=ctx.get('Learning_Activities', 'Gameplay'),
-            Learning_Resources=ctx.get('Learning_Resources', 'Game elements'),
-            Serious_Game_Type=ctx.get('Serious_Game_Type', 'Educational'),
-            Motivation=ctx.get('Motivation', 'Intrinsic'),
-            User_Profile=ctx.get('User_Profile', 'Standard')
+            VARK_Style=ctx.get('VARK_Style', 'Multi-modal')
         )
         
         raw_proposals = self.query_all_llms(synthesis_prompt, [], json_mode=False)

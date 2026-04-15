@@ -103,12 +103,14 @@ def recommend():
     if not data or 'prompt' not in data:
         return jsonify({"error": "Missing 'prompt' in request body"}), 400
     
-    query = data['prompt']
+    query = data.get('prompt', '')
+    research_data = data.get('research_data')
     user_id = data.get('user_id', 1)  # Default to user 1 if not provided
     
     try:
         # 1. Get categorized recommendations
-        recommendations = ORCHESTRATOR.recommend(query, user_id=user_id)
+        # Pass research_data if present to bypass auto-extraction
+        recommendations = ORCHESTRATOR.recommend(query, user_id=user_id, research_data=research_data)
         
         # 2. Generate the synthesis proposal
         synthesis_result = ORCHESTRATOR.generate_proposal(recommendations, query)

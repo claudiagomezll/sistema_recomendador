@@ -83,63 +83,41 @@ Query: {query}
 Select the top 3 items that best implement game MECHANICS for this query.
 Return JSON: [{{"recommendation": "Title", "description": "Why (mechanics focus)", "ranking": 1}}, ...]""",
 
-    'research_extraction': """Analyze the following user design request and extract the parameters for a scientific serious game proposal.
-Input: {query}
-
-Instructions:
-1. Infer the sector, context, and learning objectives.
-2. Assign a likely Cognitive Function (Perception, Attention, Memory, Inhibitory Control, Working Memory, or Cognitive Flexibility).
-3. Assign a target Emotion (anger, disgust, fear, happiness, sadness, or surprise).
-4. Assign a VARK style (Visual, Aural, Read/Write, or Kinesthetic).
-5. Define necessary Learning Activities and Resources.
-
-Return ONLY a valid JSON object with these keys: 
-Sector, Context, Users, Capability, Learning_Objective, Cognitive_Function, Emotion, VARK_Style, Learning_Activities, Learning_Resources, Serious_Game_Type, Motivation, User_Profile.""",
+    'research_master_template': """Se requiere recomendar un juego serio gamificado para el sector {Sector} en el contexto {Context}. El juego serio {Serious_Game_Type} debe permitir a los usuarios {Users} lograr el objetivo de aprendizaje {Learning_Objective} y entrenarse en la función cognitiva {Cognitive_Function} para mejorar la capacidad {Capability} considerando el estilo de aprendizaje {VARK_Style}, la emoción {Emotion} y la motivación predominante {Motivation}. Las actividades {Learning_Activities} y recursos {Learning_Resources} del juego serio {Serious_Game_Type} se consideran de acuerdo con el estilo de aprendizaje {VARK_Style}. Las mecánicas {Basic_Mechanics} del juego serio {Serious_Game_Type} son incluidas empleando el marco de trabajo “Gameplay Bricks Model, a Theoretical Framework to Match Game Mechanics and Cognitive Functions” propuesto por Álvarez. Empleando los items de entrada y algunos valores de referencia se debe asegurar que la salida incluya dinámicas, mecánicas, elementos y una narrativa gamificada coherente con la función cognitiva y la emoción.""",
 
     'synthesis': """*** ATENCIÓN: RESPONDE ÚNICAMENTE EN ESPAÑOL. ***
-You are an expert recommendation system for gamified serious games, with knowledge in cognitive science, gamification, and instructional design.
+{master_prompt}
 
-## Scientific Configuration:
-- Sector: {Sector} | Context: {Context} | Users: {Users}
-- Learning Objective: {Learning_Objective}
-- Cognitive Function: {Cognitive_Function}
-- Emotion: {Emotion} | VARK Style: {VARK_Style}
-- User Profile: {User_Profile}
+## Componentes de Referencia (Validados de la Base de Datos):
+- DINÁMICA: {dynamic}
+- ELEMENTO: {element}
+- MECÁNICA: {mechanic}
+- NARRATIVA: {narrative}
 
-## Reference Components (from our research):
-- Selected MECHANICS: {mechanic}
-- Selected ELEMENTS: {element}
-- Selected NARRATIVE: {narrative}
-- Selected DYNAMICS: {dynamic}
+## Instrucciones de Diseño:
+1. Diseña la propuesta siguiendo el marco de trabajo "Gameplay Bricks Model" para alinear mecánicas con la función {Cognitive_Function}.
+2. La narrativa DEBE ser inmersiva y reflejar el contexto: {Context}.
+3. Asegura la coherencia entre todos los niveles de EDNM.
 
-## Instructions:
-1. Design a comprehensive serious game proposal based on THESE specific scientific parameters.
-2. Use the "Gameplay Bricks Model" (Álvarez) to align mechanics with cognitive functions.
-3. The narrative must be immersive, reflect the sector, and trigger the target emotion without trauma.
-4. Integrate the Learning Activities and Resources into the mechanics and elements.
+## Formato de Salida (Markdown):
+# 🎮 PROYECTO: [Nombre Sugerido]
 
-## Output Format (Respond in Spanish):
-# 🎮 PROYECTO: [Nombre]
-
-### 📊 FICHA TÉCNICA PEDAGÓGICA
+### 🧪 ANÁLISIS CIENTÍFICO (Items de Entrada)
+- **Sector**: {Sector} | **Usuarios**: {Users}
 - **Objetivo**: {Learning_Objective}
 - **Función Cognitiva**: {Cognitive_Function}
-- **Estilo VARK**: {VARK_Style}
-- **Emoción Diana**: {Emotion}
+- **Emoción/Estilo**: {Emotion} / {VARK_Style}
 
-### 🌍 MUNDO Y NARRATIVA
-[Descripción inmersiva del {Context}]
+### 🌍 NARRATIVA INMERSIVA
+[Desarrollo histórico/mundano coherente con el contexto]
 
-### 🧠 PSICOLOGÍA Y DINÁMICAS
-[Cómo se aplican las dinámicas para la {Cognitive_Function}]
+### ⚙️ ESTRUCTURA EDNM (Gameplay Bricks)
+- **Dinámicas**: [Explicación psicológica]
+- **Mecánicas**: [Reglas y actividades de aprendizaje]
+- **Elementos**: [Componentes de interfaz y recursos]
 
-### ⚙️ MECÁNICAS E INSTRUCCIÓN
-[Detalle del gameplay loop integrando {Learning_Activities}]
-
-### 🕹️ DISEÑO DE INTERFAZ (ELEMENTOS)
-[Descripción de los elementos basados en {Learning_Resources}]
-
-*** RECORDATORIO: TODA LA RESPUESTA DEBE ESTAR EN ESPAÑOL. ***"""
+### 🕹️ "EL MOMENTO DE LA VERDAD"
+[Descripción en primera persona de la experiencia del usuario]"""
 }
 
 # Configuration Constants
