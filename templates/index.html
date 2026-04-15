@@ -362,10 +362,39 @@
             <section>
                 <div class="flex items-center gap-3 mb-6">
                     <i data-lucide="book-open" class="text-emerald-400"></i>
-                    <h2 class="text-3xl font-bold">3. Propuesta de Diseño Integrada</h2>
+                    <h2 class="text-3xl font-bold">3. Propuestas Generadas</h2>
                 </div>
                 <div id="proposalsContainer" class="space-y-8">
                     <!-- Proposal cards injected here -->
+                </div>
+            </section>
+
+            <!-- 4. Quality Metrics (BERTScore) -->
+            <section id="qualitySection" class="hidden">
+                <div class="flex items-center gap-3 mb-6">
+                    <i data-lucide="shield-check" class="text-blue-400"></i>
+                    <h2 class="text-3xl font-bold">4. Análisis de Calidad Técnica (BERTScore)</h2>
+                </div>
+                <div class="glass p-8 rounded-2xl overflow-hidden">
+                    <p class="text-slate-400 mb-6 text-sm">
+                        Evaluación semántica de las propuestas contra el criterio experto de investigación usando 
+                        <strong>BERTScore (Multilingüe)</strong>.
+                    </p>
+                    <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-800/80 text-slate-300 text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-4">Modelo LLM</th>
+                                    <th class="px-6 py-4">Precision (Ajuste)</th>
+                                    <th class="px-6 py-4">Recall (Cobertura)</th>
+                                    <th class="px-6 py-4 font-bold text-blue-400">F1 Score (Calidad)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="qualityTableBody" class="divide-y divide-slate-800">
+                                <!-- Quality metrics injected here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -543,20 +572,49 @@
 
             // 3. Proposals
             const container = document.getElementById('proposalsContainer');
-            container.innerHTML = Object.entries(data.synthesis.proposals).map(([model, text]) => `
-                <div class="glass p-8 rounded-2xl group relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <i data-lucide="cpu" size="64"></i>
+            const bestModel = data.synthesis.best_proposal?.model;
+
+            container.innerHTML = Object.entries(data.synthesis.proposals).map(([model, text]) => {
+                const isBest = model === bestModel;
+                return `
+                    <div class="glass p-8 rounded-2xl group relative overflow-hidden ${isBest ? 'ring-2 ring-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : ''}">
+                        ${isBest ? `
+                            <div class="absolute top-0 right-0 bg-emerald-500 text-white px-4 py-1 rounded-bl-xl text-xs font-bold flex items-center gap-1 shadow-lg z-10">
+                                <i data-lucide="award" size="14"></i>
+                                MEJOR CALIDAD TÉCNICA
+                            </div>
+                        ` : ''}
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i data-lucide="cpu" size="64"></i>
+                        </div>
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-2 h-8 ${isBest ? 'bg-emerald-500' : 'bg-slate-700'} rounded-full"></div>
+                            <h3 class="text-2xl font-bold tracking-tight">Propuesta de ${model.toUpperCase()}</h3>
+                        </div>
+                        <div class="prose prose-invert prose-emerald max-w-none text-slate-300 leading-relaxed font-light">
+                            ${marked.parse(text)}
+                        </div>
                     </div>
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-2 h-8 bg-emerald-500 rounded-full"></div>
-                        <h3 class="text-2xl font-bold tracking-tight">Propuesta de ${model.toUpperCase()}</h3>
-                    </div>
-                    <div class="prose prose-invert prose-emerald max-w-none text-slate-300 leading-relaxed font-light">
-${marked.parse(text)}
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+
+            // 4. Quality Metrics
+            const qualitySection = document.getElementById('qualitySection');
+            const qualityTableBody = document.getElementById('qualityTableBody');
+            if (data.synthesis.quality_metrics) {
+                qualitySection.classList.remove('hidden');
+                qualityTableBody.innerHTML = data.synthesis.quality_metrics.map(q => `
+                    <tr class="hover:bg-slate-800/30 transition-colors ${q.LLM === bestModel ? 'bg-emerald-500/5' : ''}">
+                        <td class="px-6 py-4 font-bold flex items-center gap-2">
+                            ${q.LLM === bestModel ? '<i data-lucide="award" class="text-emerald-400" size="16"></i>' : ''}
+                            ${q.LLM.toUpperCase()}
+                        </td>
+                        <td class="px-6 py-4 font-mono text-sm text-slate-400">${q.Precision.toFixed(4)}</td>
+                        <td class="px-6 py-4 font-mono text-sm text-slate-400">${q.Recall.toFixed(4)}</td>
+                        <td class="px-6 py-4 font-mono font-bold text-blue-400">${q.F1.toFixed(4)}</td>
+                    </tr>
+                `).join('');
+            }
 
             // 0. Research Context
             const researchSection = document.getElementById('researchSection');

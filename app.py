@@ -95,6 +95,12 @@ def recommend():
                   type: object
                 proposals:
                   type: object
+                quality_metrics:
+                  type: array
+                  items:
+                    type: object
+                best_proposal:
+                  type: object
     """
     if ORCHESTRATOR is None:
         return jsonify({"error": "Engine not initialized"}), 503

@@ -84,6 +84,18 @@ def main():
             print("-" * 40)
             print(proposal)
             print("-" * 80)
+
+        # 8. Mostrar Métrica de Calidad (BERTScore)
+        if 'quality_metrics' in synthesis_result and synthesis_result['quality_metrics']:
+            print("\n" + "="*80)
+            print("4. MÉTRICAS DE CALIDAD (BERTScore)")
+            print("="*80)
+            q_df = pd.DataFrame(synthesis_result['quality_metrics'])
+            print(q_df.to_string(index=False))
+            
+            best = synthesis_result.get('best_proposal')
+            if best:
+                print(f"\n🏆 MEJOR PROPUESTA: {best['model']} (Score F1: {best['f1_score']:.4f})")
     else:
         print("❌ No se encontraron recomendaciones válidas para esta consulta.")
     

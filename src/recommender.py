@@ -1,13 +1,17 @@
 import numpy as np
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from .config import ACTIVE_LLMS, VERBOSE, TOP_K_CANDIDATES, DATASETS, PROMPT_TEMPLATES
+from .config import (
+    ACTIVE_LLMS, VERBOSE, TOP_K_CANDIDATES, DATASETS, PROMPT_TEMPLATES,
+    EVALUATE_QUALITY, BERT_SCORE_MODEL, BERT_SCORE_LANG
+)
 from .llm_clients import create_llm_provider
 from .vector_db import rag_retrieval, get_encoder
 from .algorithms import (
     calculate_weights, fcd_recommendations, fuzzy_match_title,
     calculate_ranking_rrf, mmr_diversification
 )
+from .evaluation import calculate_berts_metrics, get_best_model_info
 
 class RecommenderOrchestrator:
     def __init__(self, df, collection, ratings_df=None, user_item_matrix=None, user_id_map=None, item_id_map=None):
@@ -313,7 +317,6 @@ class RecommenderOrchestrator:
         
         raw_proposals = self.query_all_llms(synthesis_prompt, [], json_mode=False)
         
-        # Clean and standardize proposals (detecting accidental JSON or markdown blocks)
         clean_proposals = {}
         for model_name, text in raw_proposals.items():
             if not isinstance(text, str):
@@ -325,39 +328,30 @@ class RecommenderOrchestrator:
             text = text.replace('```', '')
             text = text.strip()
             
-            # 2. Auto-fix JSON-formatted responses (common in models like Gemini)
+            # 2. Auto-fix JSON-formatted responses
             if (text.startswith('[') and text.endswith(']')) or (text.startswith('{') and text.endswith('}')):
                 import json
                 try:
                     parsed = json.loads(text)
                     new_text = ""
-                    # Case A: List of dicts
                     if isinstance(parsed, list):
                         new_text = "# 🎮 PROPUESTA DE DISEÑO ESTRATÉGICO\n\n"
                         for item in parsed:
                             if isinstance(item, dict):
-                                # Try to find a title/heading in multiple languages/keys
                                 head = item.get('recommendation', item.get('title', item.get('titulo', item.get('heading', item.get('recomendacion', '')))))
                                 body = item.get('description', item.get('content', item.get('descripcion', item.get('contenido', item.get('body', '')))))
-                                
-                                # If still empty, use the first available values
                                 if not head and item.values():
                                     head = list(item.values())[0] if not head else head
                                     if len(item.values()) > 1 and not body:
                                         body = list(item.values())[1]
-                                
                                 new_text += f"### {head}\n{body}\n\n"
                             else:
                                 new_text += f"{item}\n\n"
-                    # Case B: Object with sections (Gemini style)
                     elif isinstance(parsed, dict):
                         title = parsed.get('title', parsed.get('propuesta', parsed.get('titulo', 'PROPUESTA DE JUEGO')))
                         new_text = f"# 🎮 {title}\n\n"
-                        
-                        # Handle "sections" key
                         sections = parsed.get('sections', [])
                         if not sections and 'secciones' in parsed: sections = parsed['secciones']
-                        
                         if isinstance(sections, list):
                             for s in sections:
                                 if isinstance(s, dict):
@@ -367,20 +361,50 @@ class RecommenderOrchestrator:
                                 else:
                                     new_text += f"{s}\n\n"
                         else:
-                            # Direct key-value display for flat objects
                             for k, v in parsed.items():
                                 if k.lower() not in ['title', 'sections', 'propuesta', 'titulo', 'secciones']:
                                     new_text += f"### {k.replace('_', ' ').upper()}\n{v}\n\n"
-                    
                     if new_text:
                         text = new_text
                 except:
                     pass
-            
             clean_proposals[model_name] = text
+
+        # 5. BERTScore Quality Evaluation
+        quality_metrics = None
+        best_model_data = None
+        
+        if EVALUATE_QUALITY:
+            if VERBOSE: print("\n📏 Calculando métricas de calidad (BERTScore)...")
+            
+            # Generar el texto de referencia "experto" dinámicamente
+            reference_text = f"""
+            Título del juego: Propuesta de Juego Serio para {ctx.get('Sector', 'General')}.
+            El juego serio gamificado debe permitir a los usuarios {ctx.get('Users', 'Players')} 
+            lograr el objetivo de {ctx.get('Learning_Objective', query)} y entrenarse en la 
+            función cognitiva {ctx.get('Cognitive_Function', 'General')} para mejorar la 
+            capacidad {ctx.get('Capability', 'General')}. 
+            Debe incluir mecánicas de {ctx.get('Basic_Mechanics', 'Interacción')} y estar 
+            alineado con la emoción {ctx.get('Emotion', 'Engagement')}.
+            """
+            
+            quality_metrics_df = calculate_berts_metrics(
+                reference_text, 
+                clean_proposals, 
+                lang=BERT_SCORE_LANG, 
+                model_type=BERT_SCORE_MODEL
+            )
+            
+            if not quality_metrics_df.empty:
+                quality_metrics = quality_metrics_df.to_dict(orient='records')
+                best_name, best_f1 = get_best_model_info(quality_metrics_df)
+                best_model_data = {"model": best_name, "f1_score": best_f1}
+                if VERBOSE: print(f"   🏆 Mejor salida según BERTScore-F1: {best_name} ({best_f1:.4f})")
             
         return {
             "winners": winners,
             "proposals": clean_proposals,
+            "quality_metrics": quality_metrics,
+            "best_proposal": best_model_data,
             "research_context": self.current_research_context
         }

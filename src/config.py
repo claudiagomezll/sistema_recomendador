@@ -48,9 +48,31 @@ VERBOSE = True
 USE_PARALLEL_LLMS = True
 USE_RAPIDFUZZ = True
 USE_VECTORIZED_MMR = True
+EVALUATE_QUALITY = True  # BERTScore evaluation toggle
+BERT_SCORE_MODEL = "bert-base-multilingual-cased"
+BERT_SCORE_LANG = "es"
 
 # --- Perspective Prompts (EDNM) ---
 PROMPT_TEMPLATES = {
+    'research_extraction': """Analiza la siguiente consulta y extrae los parámetros de investigación científica para el diseño de un juego serio. 
+Retorna UNICAMENTE un objeto JSON con los siguientes campos:
+- Sector (Sector industrial o social)
+- Context (Contexto específico de aplicación)
+- Serious_Game_Type (Tipo de juego: entrenamiento, educativo, simulador, etc.)
+- Users (Perfil de los usuarios destinatarios)
+- Learning_Objective (Objetivo de aprendizaje principal)
+- Cognitive_Function (Función cognitiva: Memoria, Percepción, Atención, etc.)
+- Capability (Capacidad específica a mejorar)
+- VARK_Style (Estilo de aprendizaje: Visual, Aural, Read/Write, Kinesthetic)
+- Emotion (Emoción objetivo: Engagement, Challenge, Curiosity, etc.)
+- Motivation (Tipo de motivación: Intrínseca, Extrínseca)
+- Learning_Activities (Actividades pedagógicas)
+- Learning_Resources (Recursos necesarios)
+- Basic_Mechanics (Mecánicas básicas)
+
+Consulta: {query}
+JSON:""",
+
     'elements': """You are an expert in gamification ELEMENTS. 
 Focus on: badges, points, levels, leaderboards, and UI components.
 Candidates:
