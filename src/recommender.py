@@ -95,7 +95,8 @@ class RecommenderOrchestrator:
             futures = {
                 executor.submit(
                     create_llm_provider(cfg['provider'], cfg['model'], api_key=cfg['api_key']).generate, 
-                    prompt
+                    prompt, 
+                    json_mode=json_mode
                 ): name for name, cfg in ACTIVE_LLMS.items()
             }
             for future in as_completed(futures):
@@ -256,34 +257,48 @@ class RecommenderOrchestrator:
             print(f"✅ Resultados finales agrupados: {len(final_ranked)} ítems.")
             
         return final_ranked
+    def _format_winner_for_prompt(self, val):
+        """Convierte un resultado JSON de perspectiva en texto legible para el prompt de síntesis."""
+        if not val or val == 'N/A' or val == '...':
+            return "No disponible"
+        try:
+            import json
+            # Intentar limpiar si viene con markdown
+            val_clean = str(val).replace('```json', '').replace('```', '').strip()
+            if (val_clean.startswith('[') and val_clean.endswith(']')) or (val_clean.startswith('{') and val_clean.endswith('}')):
+                data = json.loads(val_clean)
+                if isinstance(data, list):
+                    items = [item.get('recommendation', item.get('title', '')) for item in data]
+                    return ", ".join([i for i in items if i])
+                elif isinstance(data, dict):
+                    return data.get('recommendation', data.get('title', str(data)))
+        except:
+            pass
+        return str(val)
 
     def generate_proposal(self, ranked_results, query):
         if VERBOSE: print("\n🎨 Generando propuesta de diseño integrada...")
         
-        # Extract best of each category
-        winners = {}
+        # 1. Extract best of each category
+        selected_winners = {}
         perspectives = ['element', 'dynamic', 'narrative', 'mechanic']
         
         for p in perspectives:
-            # Find the best item for this perspective
             best = next((x for x in ranked_results if x.get('perspective') == p), None)
             if best:
-                winners[p] = f"{best['title']} - {best['llm_reasoning']}"
+                selected_winners[p] = f"{best['title']} - {best['llm_reasoning']}"
                 if VERBOSE: print(f"   🏆 Ganador {p.upper()}: {best['title']}")
 
-        if not winners:
+        if not selected_winners:
             return {"error": "No hay suficientes componentes validados para generar una propuesta."}
 
-        # 4. Generate synthesis with all configured models
-        # Ensure we have defaults if a category was missed
-        
-        # Extract research context if not present
+        # 2. Extract research context if not present
         if not hasattr(self, 'current_research_context') or not self.current_research_context:
             self.extract_research_parameters(query)
 
         ctx = self.current_research_context
         
-        # Build the specific research master prompt requested by the user
+        # 3. Build the specific research master prompt
         master_prompt = PROMPT_TEMPLATES['research_master_template'].format(
             Sector=ctx.get('Sector', 'General'),
             Context=ctx.get('Context', 'N/A'),
@@ -302,10 +317,10 @@ class RecommenderOrchestrator:
         
         synthesis_prompt = PROMPT_TEMPLATES['synthesis'].format(
             master_prompt=master_prompt,
-            element=winners.get('element', 'N/A'),
-            dynamic=winners.get('dynamic', 'N/A'),
-            narrative=winners.get('narrative', 'N/A'),
-            mechanic=winners.get('mechanic', 'N/A'),
+            element=self._format_winner_for_prompt(selected_winners.get('element', 'N/A')),
+            dynamic=self._format_winner_for_prompt(selected_winners.get('dynamic', 'N/A')),
+            narrative=self._format_winner_for_prompt(selected_winners.get('narrative', 'N/A')),
+            mechanic=self._format_winner_for_prompt(selected_winners.get('mechanic', 'N/A')),
             Context=ctx.get('Context', 'Gaming'),
             Cognitive_Function=ctx.get('Cognitive_Function', 'General'),
             Sector=ctx.get('Sector', 'General'),
@@ -314,26 +329,31 @@ class RecommenderOrchestrator:
             Emotion=ctx.get('Emotion', 'Engagement'),
             VARK_Style=ctx.get('VARK_Style', 'Multi-modal')
         )
-        
+
         raw_proposals = self.query_all_llms(synthesis_prompt, [], json_mode=False)
         
         clean_proposals = {}
-        for model_name, text in raw_proposals.items():
-            if not isinstance(text, str):
-                text = str(text)
+        import re
+        import json
+        for name, text in raw_proposals.items():
+            if not text: 
+                clean_proposals[name] = "Error: Sin respuesta del modelo."
+                continue
             
-            # 1. Strip markdown code blocks
-            import re
+            # 1. Quitar etiquetas de bloque de código markdown redundantes
             text = re.sub(r'```[a-zA-Z]*\n', '', text)
-            text = text.replace('```', '')
-            text = text.strip()
+            text = text.replace('```', '').strip()
             
-            # 2. Auto-fix JSON-formatted responses
-            if (text.startswith('[') and text.endswith(']')) or (text.startswith('{') and text.endswith('}')):
-                import json
+            # 2. Extractor de JSON robusto (busca el bloque más grande entre [] o {})
+            json_pattern = r'(\[[\s\S]*\]|\{[\s\S]*\})'
+            match = re.search(json_pattern, text)
+            
+            if match:
+                potential_json = match.group(0)
                 try:
-                    parsed = json.loads(text)
+                    parsed = json.loads(potential_json)
                     new_text = ""
+                    # Caso A: Lista de recomendaciones
                     if isinstance(parsed, list):
                         new_text = "# 🎮 PROPUESTA DE DISEÑO ESTRATÉGICO\n\n"
                         for item in parsed:
@@ -365,10 +385,11 @@ class RecommenderOrchestrator:
                                 if k.lower() not in ['title', 'sections', 'propuesta', 'titulo', 'secciones']:
                                     new_text += f"### {k.replace('_', ' ').upper()}\n{v}\n\n"
                     if new_text:
-                        text = new_text
+                        # Reemplazo in-place para mantener el texto narrativo alrededor
+                        text = text.replace(potential_json, "\n" + new_text)
                 except:
                     pass
-            clean_proposals[model_name] = text
+            clean_proposals[name] = text
 
         # 5. BERTScore Quality Evaluation
         quality_metrics = None
@@ -402,7 +423,7 @@ class RecommenderOrchestrator:
                 if VERBOSE: print(f"   🏆 Mejor salida según BERTScore-F1: {best_name} ({best_f1:.4f})")
             
         return {
-            "winners": winners,
+            "winners": selected_winners,
             "proposals": clean_proposals,
             "quality_metrics": quality_metrics,
             "best_proposal": best_model_data,
