@@ -130,3 +130,15 @@ Images and signals: Se utilizan imágenes visuales y señales auditivas para rep
 “Mientras miro el panel de control, mi corazón late con fuerza. Las lecturas de metano están subiendo y el temporizador avanza rápidamente. Debo decidir si entrar a la siguiente sección de la mina. Las alarmas suenan en mi cabeza, cada pitido es un recordatorio de que el tiempo se me acaba. '¿Lo arriesgo?' me pregunto mientras observo las imágenes parpadeantes de advertencia. Si no actúo ahora, mis compañeros podrían enfrentar una tragedia. Comienzo a escribir las lecturas y a emparejarlas con los protocolos de seguridad que aprendí en mis entrenamientos. El miedo se apodera de mí, pero sé que cada decisión cuenta. Cada segundo es vital.”
 Propuesta de Recomendación en Formato JSON
 [ {"recommendation": "Mina en Crisis", "description": "La narrativa inmersiva y el enfoque en la atención selectiva y el miedo aseguran que los trabajadores mineros comprendan la importancia de la supervisión y la identificación de riesgos.", "ranking": 1}, {"recommendation": "El Guardián de la Mina", "description": "Fomenta la responsabilidad y el liderazgo mientras los jugadores deben supervisar a su equipo, mejorando su atención y capacidad de respuesta ante situaciones peligrosas.", "ranking": 2}, {"recommendation": "Evacuación Inminente", "description": "Enfocado en decisiones rápidas bajo presión, enseña la importancia de la comunicación y la alerta en situaciones de riesgo, clave en el entorno minero.", "ranking": 3},
+
+
+
+## Análisis de Calidad Técnica (BERTScore)
+
+Evaluación semántica de las propuestas contra el criterio experto de investigación usando BERTScore (Multilingüe).
+
+| MODELO LLM   | PRECISIÓN (AJUSTE) | RECALL (COBERTURA) | F1 SCORE (CALIDAD) |
+|--------------|--------------------|---------------------|---------------------|
+| GPT4O_MINI   | 0.6044             | 0.7162              | 0.6556              |
+| GEMINI       | 0.6007             | 0.7112              | 0.6513              |
+| CLAUDE_HAIKU | 0.5775             | 0.6956              | 0.6311              |
