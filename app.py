@@ -124,8 +124,9 @@ def recommend():
         return jsonify({
             "status": "success",
             "query": query,
-            "results": recommendations, # This is the full list of items with metadata
-            "synthesis": synthesis_result  # Contains 'winners' and 'proposals'
+            "results": recommendations, 
+            "synthesis": synthesis_result,
+            "execution_log": synthesis_result.get('execution_log', [])
         })
         
     except Exception as e:

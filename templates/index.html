@@ -398,6 +398,22 @@
                 </div>
             </section>
 
+            <!-- 5. Technical Trace Log (Execution Log) -->
+            <section id="traceSection" class="hidden">
+                <button id="toggleTrace" class="w-full flex items-center justify-between p-6 glass rounded-2xl border-l-4 border-l-amber-500 hover:bg-white/5 transition-all">
+                    <div class="flex items-center gap-4">
+                        <i data-lucide="terminal" class="text-amber-500"></i>
+                        <h2 class="text-2xl font-bold">5. Trazabilidad Técnica de la Ejecución</h2>
+                    </div>
+                    <i data-lucide="chevron-down" id="traceChevron" class="transition-transform"></i>
+                </button>
+                <div id="traceContent" class="hidden mt-4 space-y-4">
+                    <div id="logContainer" class="bg-slate-950 border border-slate-800 rounded-xl p-6 font-mono text-xs overflow-auto max-h-[600px] space-y-4">
+                        <!-- Logs injected here -->
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -438,8 +454,19 @@
             toggleBtn.querySelector('span').innerText = isExpertMode ? 'Modo Simple' : 'Modo Experto (Investigación)';
             toggleBtn.classList.toggle('bg-blue-500/20', !isExpertMode);
             toggleBtn.classList.toggle('bg-purple-500/20', isExpertMode);
-            statusMessage.innerText = isExpertMode ? "Modo: Experto (Datos de Entrada Estructurados)" : "Modo: Estándar";
         });
+
+        // Technical Trace Toggle
+        const toggleTrace = document.getElementById('toggleTrace');
+        const traceContent = document.getElementById('traceContent');
+        const traceChevron = document.getElementById('traceChevron');
+
+        if (toggleTrace) {
+            toggleTrace.addEventListener('click', () => {
+                traceContent.classList.toggle('hidden');
+                traceChevron.classList.toggle('rotate-180');
+            });
+        }
 
         // Cascading Dropdown Logic for Cognitive Functions
         const cognitiveMap = {
@@ -639,6 +666,19 @@
                             <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">${f.label}</p>
                             <p class="text-sm font-semibold text-slate-200">${f.val || 'N/A'}</p>
                         </div>
+                    </div>
+                `).join('');
+            }
+
+            // 5. Technical Trace Log
+            const traceSection = document.getElementById('traceSection');
+            const logContainer = document.getElementById('logContainer');
+            if (data.execution_log) {
+                traceSection.classList.remove('hidden');
+                logContainer.innerHTML = data.execution_log.map(log => `
+                    <div class="border-b border-white/5 pb-4 last:border-0">
+                        <div class="text-amber-500 font-bold mb-2 uppercase text-[10px] tracking-widest">${log.step}</div>
+                        <div class="whitespace-pre-wrap text-slate-400 font-mono tracking-tight leading-relaxed select-all">${log.details.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
                     </div>
                 `).join('');
             }

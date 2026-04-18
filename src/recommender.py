@@ -23,6 +23,16 @@ class RecommenderOrchestrator:
         self.item_id_map = item_id_map
         self.encoder = get_encoder()
         self.current_research_context = None
+        self.execution_log = []
+
+    def _log(self, step, details):
+        """Adds a technical step to the execution log."""
+        self.execution_log.append({
+            "step": step,
+            "details": str(details)
+        })
+        if VERBOSE:
+            print(f"   📝 Logged: {step}")
 
     def set_research_context(self, research_data):
         """Manually sets the research context from structured expert input."""
@@ -59,9 +69,11 @@ class RecommenderOrchestrator:
                 "Learning_Objective": query, "Cognitive_Function": "General",
                 "Emotion": "Engagement", "VARK_Style": "Multi-modal"
             }
+        
+        self._log("Extracción de Parámetros", f"Prompt: {prompt}\n\nResultado: {self.current_research_context}")
         return self.current_research_context
 
-    def query_all_llms(self, query, candidates, perspective=None, json_mode=True):
+    def query_all_llms(self, query, candidates, perspective=None, json_mode=True, research_context=None):
         if perspective and perspective in PROMPT_TEMPLATES:
             # Check if it's the synthesis prompt which needs special placeholders
             if perspective == 'synthesis' and isinstance(candidates, dict):
@@ -75,12 +87,29 @@ class RecommenderOrchestrator:
             else:
                 # Build context for standard perspective prompts
                 context = ""
-                # Build context from candidates if provided
                 if hasattr(candidates, 'iterrows'):
                     for _, row in candidates.iterrows():
                         context += f"- ID: {row['id']}, Título: {row['title']}, Descripción: {row['description']}\n"
-                    prompt = PROMPT_TEMPLATES[perspective].format(query=query, context=context)
-                else:
+
+                # Build full context for the rich expert prompts
+                format_args = {
+                    'query': query,
+                    'context': context,
+                    'Sector': 'N/A', 'Context': 'N/A', 'Learning_Objective': query,
+                    'Cognitive_Function': 'N/A', 'Capability': 'N/A', 'VARK_Style': 'N/A',
+                    'Emotion': 'N/A', 'Motivation': 'N/A', 'Learning_Activities': 'N/A',
+                    'Learning_Resources': 'N/A', 'Basic_Mechanics': 'N/A'
+                }
+                
+                # Override with actual research context if provided
+                if research_context:
+                    for k, v in research_context.items():
+                        if v: format_args[k] = v
+                
+                try:
+                    prompt = PROMPT_TEMPLATES[perspective].format(**format_args)
+                except KeyError as e:
+                    if VERBOSE: print(f"   ⚠️ Prompt formatting error (missing key {e}): falling back to simple format")
                     prompt = PROMPT_TEMPLATES[perspective].format(query=query, context=context)
         else:
             # Fallback to default simple prompt
@@ -90,6 +119,7 @@ class RecommenderOrchestrator:
                     prompt += f"- {row['title']}: {row['description']}\n"
             prompt += "\nSelect the top 5 most relevant items and explain why. Format as JSON: [{\"recommendation\": \"Title\", \"description\": \"Why\", \"ranking\": 1}, ...]"
 
+        self._log(f"Prompt Dimensión: {perspective}", prompt)
         results = {}
         with ThreadPoolExecutor() as executor:
             futures = {
@@ -127,6 +157,7 @@ class RecommenderOrchestrator:
                     
                     if isinstance(parsed_result, list):
                         results[name] = parsed_result
+                        self._log(f"Respuesta LLM ({name} - {perspective})", raw_result)
                         if VERBOSE: print(f"   ✅ LLM {name} entregó {len(parsed_result)} recomendaciones.")
                     else:
                         if VERBOSE: print(f"   ⚠️ Warning LLM {name}: Expected list, got {type(parsed_result).__name__}")
@@ -183,6 +214,8 @@ class RecommenderOrchestrator:
         Calcula recomendaciones híbridas integrando RAG y Filtrado Colaborativo.
         Si se provee research_data, se usa para el contexto científico.
         """
+        self.execution_log = [] # Reset log for new run
+        self._log("Inicio de Recomendación", f"Query: {query}\nUser ID: {user_id}")
         if research_data:
             self.set_research_context(research_data)
             # Use specific fields from research_data to improve search
@@ -197,6 +230,7 @@ class RecommenderOrchestrator:
 
         # 1. Weights
         weights = calculate_weights(user_id, self.ratings_df)
+        self._log("Pesos de Recomendación", f"User: {user_id}\nPesos: {weights}")
         
         # Perspectives matching the database labels (element, dynamic, narrative, mechanic)
         perspectives = ['element', 'dynamic', 'narrative', 'mechanic']
@@ -214,7 +248,12 @@ class RecommenderOrchestrator:
                 continue
                 
             # We add 's' for the prompt context if needed, but the label 'p' is used for validation
-            llm_results = self.query_all_llms(query, candidates, perspective=p+'s' if not p.endswith('s') else p)
+            llm_results = self.query_all_llms(
+                query, 
+                candidates, 
+                perspective=p+'s' if not p.endswith('s') else p,
+                research_context=self.current_research_context
+            )
             validated = self.semantic_validation(llm_results, query, target_item_type=p)
             
             # Sort by relevance and take top 3 for this perspective
@@ -427,5 +466,6 @@ class RecommenderOrchestrator:
             "proposals": clean_proposals,
             "quality_metrics": quality_metrics,
             "best_proposal": best_model_data,
-            "research_context": self.current_research_context
+            "research_context": self.current_research_context,
+            "execution_log": self.execution_log
         }
