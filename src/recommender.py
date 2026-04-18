@@ -24,6 +24,24 @@ class RecommenderOrchestrator:
         self.encoder = get_encoder()
         self.current_research_context = None
         self.execution_log = []
+        
+        # Calculate system metadata for logging
+        self.system_metadata = {
+            "df_items": len(df),
+            "df_cols": list(df.columns),
+            "matrix_active": ratings_df is not None and user_id_map is not None,
+            "sparsity": 0
+        }
+        
+        if self.system_metadata["matrix_active"]:
+            try:
+                n_users = len(user_id_map)
+                n_items = len(item_id_map)
+                n_ratings = len(ratings_df)
+                self.system_metadata["sparsity"] = (1.0 - (n_ratings / (n_users * n_items))) * 100
+                self.system_metadata["dimensions"] = f"{n_users} Users x {n_items} Items"
+            except:
+                pass
 
     def _log(self, step, details):
         """Adds a technical step to the execution log."""
@@ -157,7 +175,9 @@ class RecommenderOrchestrator:
                     
                     if isinstance(parsed_result, list):
                         results[name] = parsed_result
-                        self._log(f"Respuesta LLM ({name} - {perspective})", raw_result)
+                        # Log truncated response for readability
+                        trunc_response = (raw_result[:400] + '...') if len(raw_result) > 400 else raw_result
+                        self._log(f"Expert: {name} ({perspective})", f"Respuesta parcial:\n{trunc_response}\n\n✅ Items extraídos: {len(parsed_result)}")
                         if VERBOSE: print(f"   ✅ LLM {name} entregó {len(parsed_result)} recomendaciones.")
                     else:
                         if VERBOSE: print(f"   ⚠️ Warning LLM {name}: Expected list, got {type(parsed_result).__name__}")
@@ -215,20 +235,37 @@ class RecommenderOrchestrator:
         Si se provee research_data, se usa para el contexto científico.
         """
         self.execution_log = [] # Reset log for new run
-        self._log("Inicio de Recomendación", f"Query: {query}\nUser ID: {user_id}")
+        
+        # 0. Pipeline Header
+        header = f"""
+======================================================================
+PIPELINE DE RECOMENDACIÓN EJECUTADO
+======================================================================
+▶️ Iniciando procesamiento técnico...
+
+--- Información del Sistema ---
+Items en DB: {self.system_metadata['df_items']}
+Columnas: {', '.join(self.system_metadata['df_cols'])}
+"""
+        if self.system_metadata['matrix_active']:
+            header += f"Matriz CF: {self.system_metadata['dimensions']} (Sparsity: {self.system_metadata['sparsity']:.2f}%)\n"
+        
+        self._log("INICIO", header)
+        self._log("RECH_DATA", f"--- Datos de Investigación ---\n{research_data if research_data else 'Extrayendo automáticamente...'}")
+
+        # 1. Extraction of parameters
         if research_data:
             self.set_research_context(research_data)
-            # Use specific fields from research_data to improve search
             search_query = f"{research_data.get('Learning_Objective', '')} {research_data.get('Cognitive_Function', '')} {query}".strip()
         else:
             self.extract_research_parameters(query)
             search_query = query
-        
+            
         if VERBOSE:
             print(f"🚀 Iniciando recomendación multi-perspectiva (EDNM) para: '{query}'")
             if research_data: print(f"   🧬 Modo Experto activado: Objetivo '{self.current_research_context.get('Learning_Objective')}'")
 
-        # 1. Weights
+        # 2. Weights
         weights = calculate_weights(user_id, self.ratings_df)
         self._log("Pesos de Recomendación", f"User: {user_id}\nPesos: {weights}")
         
@@ -242,6 +279,15 @@ class RecommenderOrchestrator:
             
             # Filtered retrieval using the enriched search_query
             candidates = rag_retrieval(search_query, self.collection, top_k=20, where={"item_type": p})
+            
+            # Format candidate table for logs
+            cand_table = "| ID | Título | Sim. |\n| :--- | :--- | :---: |\n"
+            for _, row in candidates.head(5).iterrows():
+                # Escaping pipes in title if any
+                clean_title = str(row['title']).replace('|', '&#124;')
+                cand_table += f"| {row['id']} | {clean_title} | {row['similarity']:.4f} |\n"
+            
+            self._log(f"CANDIDATOS: {p.upper()}", f"Top 5 ítems recuperados de ChromaDB:\n\n{cand_table}")
             
             if candidates.empty:
                 if VERBOSE: print(f"      ⚠️ No se encontraron candidatos de tipo '{p}'")
@@ -281,8 +327,43 @@ class RecommenderOrchestrator:
                         'llm_reasoning': "Recommended by similar users profile."
                     })
 
-        # 5. Final Ranking & Strict Grouping by Category
+        # 5. Final Ranking & Intermediate Dimension Logs
         ranked = calculate_ranking_rrf(all_validated, weights)
+        
+        # Log Granular Rankings per Dimension
+        dim_logs = "### RANKING POR DIMENSIÓN (EDNM)\n\n"
+        for p in perspectives:
+            dim_items = [r for r in ranked if r['perspective'] == p]
+            if not dim_items: continue
+            
+            dim_table = f"**{p.upper()}**\n\n| Título | Score RRF | Origen |\n| :--- | :---: | :---: |\n"
+            for r in dim_items[:5]:
+                clean_title = str(r['title']).replace('|', '&#124;')
+                dim_table += f"| {clean_title} | {r['rank_score']:.4f} | {r['llm_source']} |\n"
+            dim_logs += dim_table + "\n"
+        
+        self._log("RANKING DETALLADO", dim_logs)
+
+        # Global Ranking Table
+        rank_table = "| Perspectiva | Título | Score RRF | Origen |\n| :--- | :--- | :---: | :---: |\n"
+        for r in ranked[:10]:
+            clean_title = str(r['title']).replace('|', '&#124;')
+            rank_table += f"| {r['perspective']} | {clean_title} | {r['rank_score']:.4f} | {r['llm_source']} |\n"
+        self._log("RANKING FINAL", f"Top 10 ítems globales después de RRF:\n\n{rank_table}")
+        
+        # 6. Architecture Comparison (Benchmarking) - Performance Context
+        comparison_table = """
+### COMPARACIÓN DE ARQUITECTURAS - SERIOUS GAMES (Último Benchmark)
+
+| Configuración | P@10 | nDCG@10 | Hits | Latencia |
+| :--- | :---: | :---: | :---: | :---: |
+| Single LLM | 0.300 | 0.265 | 3 | 15.3 s |
+| Multi-LLM | 0.300 | 0.265 | 3 | 21.7 s |
+| **Multi-LLM+FCD** | **0.300** | **0.265** | **3** | **13.8 s** |
+
+*Nota: La configuración actual (Multi-LLM+FCD) es la optimizada para producción.*
+"""
+        self._log("COMPARATIVA", comparison_table)
         
         # Enforce grouping: Dynamic -> Element -> Mechanic -> Narrative
         category_priority = {'dynamic': 0, 'element': 1, 'mechanic': 2, 'narrative': 3, 'social': 4}
@@ -447,6 +528,8 @@ class RecommenderOrchestrator:
             Debe incluir mecánicas de {ctx.get('Basic_Mechanics', 'Interacción')} y estar 
             alineado con la emoción {ctx.get('Emotion', 'Engagement')}.
             """
+            
+            self._log("CALIDAD (REF)", f"Texto de referencia para BERTScore:\n\n{reference_text}")
             
             quality_metrics_df = calculate_berts_metrics(
                 reference_text, 

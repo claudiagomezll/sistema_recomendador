@@ -86,6 +86,27 @@
         .icon-box {
             @apply p-2 bg-slate-800 rounded-lg text-blue-400 flex items-center justify-center;
         }
+
+        /* Technical Tables in Logs */
+        table {
+            @apply w-full border-collapse mb-6 mt-4 text-xs;
+        }
+        
+        th {
+            @apply bg-slate-800/50 text-amber-500 font-bold px-4 py-2 text-left border border-white/10 uppercase tracking-tighter;
+        }
+        
+        td {
+            @apply px-4 py-2 border border-white/5 text-slate-400 font-mono;
+        }
+        
+        tr:nth-child(even) {
+            @apply bg-white/5;
+        }
+        
+        tr:hover {
+            @apply bg-blue-500/10 transition-colors;
+        }
     </style>
 </head>
 
@@ -99,6 +120,29 @@
                 <strong>Elementos, Dinámicas, Narrativas y Mecánicas</strong>.
             </p>
         </header>
+
+        <!-- Case Presets Section -->
+        <section class="mb-6">
+            <div class="flex flex-wrap items-center gap-4">
+                <span class="text-xs uppercase tracking-widest text-slate-500 font-bold flex items-center gap-2">
+                    <i data-lucide="beaker" size="14"></i> Casos de Prueba:
+                </span>
+                <button onclick="loadPreset(1)"
+                    class="glass px-4 py-2 rounded-xl text-xs font-semibold text-blue-300 hover:bg-blue-500/20 border border-blue-500/20 transition-all flex items-center gap-2">
+                    <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Caso 1: Minería (Atmósfera)
+                </button>
+                <button onclick="loadPreset(2)"
+                    class="glass px-4 py-2 rounded-xl text-xs font-semibold text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 transition-all flex items-center gap-2">
+                    <span class="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    Caso 2: Maquinaria (Complejo)
+                </button>
+                <button onclick="resetForm()"
+                    class="glass px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-white/10 border border-white/10 transition-all">
+                    Resetear Filtros
+                </button>
+            </div>
+        </section>
 
         <!-- Main Input Section -->
         <section class="mb-12">
@@ -305,7 +349,7 @@
                 <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6">
                 </div>
                 <h3 class="text-2xl font-bold mb-2">Orquestando LLMs...</h3>
-                <p class="text-slate-400 animate-pulse">Analizando perspectivas EDNM y consultando modelos
+                <p class="text-slate-400 animate-pulse">Analizando dimensiones EDNM y consultando modelos
                     especializados.</p>
             </div>
         </section>
@@ -334,10 +378,10 @@
                     <table class="w-full text-left">
                         <thead class="bg-slate-800/80 text-slate-300 text-sm uppercase tracking-wider">
                             <tr>
-                                <th class="px-6 py-4">Perspectiva</th>
-                                <th class="px-6 py-4">Componente</th>
+                                <th class="px-6 py-4">Dimension</th>
+                                <th class="px-6 py-4">Component</th>
                                 <th class="px-6 py-4">Score</th>
-                                <th class="px-6 py-4">Análisis</th>
+                                <th class="px-6 py-4">Analysis</th>
                             </tr>
                         </thead>
                         <tbody id="fullResultsTable" class="divide-y divide-slate-800">
@@ -377,7 +421,7 @@
                 </div>
                 <div class="glass p-8 rounded-2xl overflow-hidden">
                     <p class="text-slate-400 mb-6 text-sm">
-                        Evaluación semántica de las propuestas contra el criterio experto de investigación usando 
+                        Evaluación semántica de las propuestas contra el criterio experto de investigación usando
                         <strong>BERTScore (Multilingüe)</strong>.
                     </p>
                     <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
@@ -400,15 +444,25 @@
 
             <!-- 5. Technical Trace Log (Execution Log) -->
             <section id="traceSection" class="hidden">
-                <button id="toggleTrace" class="w-full flex items-center justify-between p-6 glass rounded-2xl border-l-4 border-l-amber-500 hover:bg-white/5 transition-all">
+                <button id="toggleTrace"
+                    class="w-full flex items-center justify-between p-6 glass rounded-2xl border-l-4 border-l-amber-500 hover:bg-white/5 transition-all">
                     <div class="flex items-center gap-4">
                         <i data-lucide="terminal" class="text-amber-500"></i>
                         <h2 class="text-2xl font-bold">5. Trazabilidad Técnica de la Ejecución</h2>
                     </div>
-                    <i data-lucide="chevron-down" id="traceChevron" class="transition-transform"></i>
+                    <div class="flex items-center gap-4">
+                        <button id="copyLogBtn"
+                            class="p-2 hover:bg-white/10 rounded-lg text-slate-400 transition-all flex items-center gap-2 text-xs"
+                            title="Copiar logs al portapapeles">
+                            <i data-lucide="copy" size="14"></i>
+                            <span>Copiar Logs</span>
+                        </button>
+                        <i data-lucide="chevron-down" id="traceChevron" class="transition-transform"></i>
+                    </div>
                 </button>
                 <div id="traceContent" class="hidden mt-4 space-y-4">
-                    <div id="logContainer" class="bg-slate-950 border border-slate-800 rounded-xl p-6 font-mono text-xs overflow-auto max-h-[600px] space-y-4">
+                    <div id="logContainer"
+                        class="bg-slate-950 border border-slate-800 rounded-xl p-6 font-mono text-xs overflow-auto max-h-[600px] space-y-4">
                         <!-- Logs injected here -->
                     </div>
                 </div>
@@ -501,7 +555,106 @@
             }
         });
 
-        generateBtn.addEventListener('click', async () => {
+        // --- PRESETS SYSTEM ---
+        const PRESETS = {
+            1: {
+                prompt: "Reforzar la atención selectiva y percepción de señales de advertencia",
+                user_id: 1,
+                expert: true,
+                research_data: {
+                    Context: "En una mina subterránea, un grupo de trabajadores ingresa a un nivel sin verificar la atmósfera. Una acumulación de metano, combinada con polvo de carbón, genera una explosión cuando los trabajadores realizan un encendido eléctrico no autorizado. Los fallos identificados fueron: monitoreo atmosférico inexistente, baja percepción del riesgo, supervisión insuficiente y formación incompleta sobre gases.",
+                    Sector: "Miner",
+                    Users: "Mining workers",
+                    Capability: "Supervisión",
+                    Learning_Objective: "Reforzar la atención selectiva y percepción de señales de advertencia",
+                    Cognitive_Level: "Basic",
+                    Cognitive_Function: "Attention",
+                    Emotion: "fear",
+                    VARK_Style: "Visual",
+                    Learning_Activities: "See, build, listen, sing, move ",
+                    Learning_Resources: "Images, map, timer, signal",
+                    Serious_Game_Type: "Adventure",
+                    Basic_Mechanics: "Write and match",
+                    Motivation: "Extrínseca",
+                    User_Profile: "The learning style is aural and visual, the experienced emotion is fear, the targeted cognitive functions are selective attention and perception, and the predominant motivation is extrinsic"
+                }
+            },
+            2: {
+                prompt: "Reinforce decision-making under pressure",
+                user_id: 1,
+                expert: true,
+                research_data: {
+                    Context: "Un operador pierde el control del cargador frontal en una pendiente. El vehículo derrapa, golpea una banca de terreno y se vuelca, afectando al conductor y a un ayudante que estaba demasiado cerca. Los fallos identificados: Exceso de carga, control deficiente del equipo y falta de señalización y rutas seguras.",
+                    Sector: "Miner",
+                    Users: "Mining workers",
+                    Capability: "Decision-making under pressure",
+                    Learning_Objective: "Reinforce decision-making under pressure",
+                    Cognitive_Level: "Complex",
+                    Cognitive_Function: "Executive Functions",
+                    Cognitive_Exec: "Working Memory",
+                    Emotion: "anger",
+                    VARK_Style: "Visual",
+                    Learning_Activities: "See, Exit",
+                    Learning_Resources: "Map, Timer",
+                    Serious_Game_Type: "Driver",
+                    Basic_Mechanics: "Move and avoid",
+                    Motivation: "Extrínseca",
+                    User_Profile: "The learning style is visual, the experienced emotion is anger, the targeted cognitive function is working memory, and the predominant motivation is extrinsic"
+                }
+            }
+        };
+
+        function loadPreset(id) {
+            const data = PRESETS[id];
+            if (!data) return;
+
+            // 1. Basic Fields
+            document.getElementById('promptInput').value = data.prompt;
+
+            // 2. Expert Mode activation
+            if (data.expert && document.getElementById('expertMode').classList.contains('hidden')) {
+                toggleExpertMode();
+            }
+
+            // 3. Populate Expert Fields
+            const rd = data.research_data;
+            for (const key in rd) {
+                const el = document.getElementById('exp_' + key);
+                if (el) {
+                    el.value = rd[key];
+                    // Trigger change for cascading selects
+                    if (key === 'Cognitive_Level') {
+                        el.dispatchEvent(new Event('change'));
+                        // Small delay for dynamic select population
+                        setTimeout(() => {
+                            if (rd.Cognitive_Function) {
+                                document.getElementById('exp_Cognitive_Function').value = rd.Cognitive_Function;
+                                document.getElementById('exp_Cognitive_Function').dispatchEvent(new Event('change'));
+
+                                // Third level nesting (Executive Functions)
+                                setTimeout(() => {
+                                    if (rd.Cognitive_Exec) {
+                                        document.getElementById('exp_Cognitive_Exec').value = rd.Cognitive_Exec;
+                                    }
+                                }, 50);
+                            }
+                        }, 50);
+                    }
+                }
+            }
+
+            // Notification toast or status
+            document.getElementById('statusMessage').innerText = "Status: Caso " + id + " cargado";
+        }
+
+        function resetForm() {
+            document.getElementById('promptInput').value = "";
+            const inputs = document.querySelectorAll('.expert-input');
+            inputs.forEach(i => i.value = "");
+            document.getElementById('statusMessage').innerText = "Status: Formulario reseteado";
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', async () => {
             const prompt = promptInput.value.trim();
             let researchData = null;
 
@@ -673,14 +826,34 @@
             // 5. Technical Trace Log
             const traceSection = document.getElementById('traceSection');
             const logContainer = document.getElementById('logContainer');
+            const copyLogBtn = document.getElementById('copyLogBtn');
+
             if (data.execution_log) {
                 traceSection.classList.remove('hidden');
                 logContainer.innerHTML = data.execution_log.map(log => `
-                    <div class="border-b border-white/5 pb-4 last:border-0">
-                        <div class="text-amber-500 font-bold mb-2 uppercase text-[10px] tracking-widest">${log.step}</div>
-                        <div class="whitespace-pre-wrap text-slate-400 font-mono tracking-tight leading-relaxed select-all">${log.details.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                    <div class="border-b border-white/5 pb-6 last:border-0">
+                        <div class="text-amber-500 font-bold mb-3 uppercase text-[10px] tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span>
+                            ${log.step}
+                        </div>
+                        <div class="prose prose-invert prose-xs max-w-none text-slate-400 font-mono tracking-tight leading-relaxed select-all">
+                            ${marked.parse(log.details)}
+                        </div>
                     </div>
                 `).join('');
+
+                // Copy functionality
+                if (copyLogBtn) {
+                    copyLogBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        const fullLog = data.execution_log.map(l => `[${l.step}]\n${l.details}`).join('\n\n' + '='.repeat(30) + '\n\n');
+                        navigator.clipboard.writeText(fullLog).then(() => {
+                            const span = copyLogBtn.querySelector('span');
+                            span.innerText = '¡Copiado!';
+                            setTimeout(() => span.innerText = 'Copiar Logs', 2000);
+                        });
+                    };
+                }
             }
 
             // Re-initialize icons for new elements
