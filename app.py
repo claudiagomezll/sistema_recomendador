@@ -95,6 +95,12 @@ def recommend():
                   type: object
                 proposals:
                   type: object
+                quality_metrics:
+                  type: array
+                  items:
+                    type: object
+                best_proposal:
+                  type: object
     """
     if ORCHESTRATOR is None:
         return jsonify({"error": "Engine not initialized"}), 503
@@ -103,12 +109,14 @@ def recommend():
     if not data or 'prompt' not in data:
         return jsonify({"error": "Missing 'prompt' in request body"}), 400
     
-    query = data['prompt']
+    query = data.get('prompt', '')
+    research_data = data.get('research_data')
     user_id = data.get('user_id', 1)  # Default to user 1 if not provided
     
     try:
         # 1. Get categorized recommendations
-        recommendations = ORCHESTRATOR.recommend(query, user_id=user_id)
+        # Pass research_data if present to bypass auto-extraction
+        recommendations = ORCHESTRATOR.recommend(query, user_id=user_id, research_data=research_data)
         
         # 2. Generate the synthesis proposal
         synthesis_result = ORCHESTRATOR.generate_proposal(recommendations, query)
@@ -116,8 +124,9 @@ def recommend():
         return jsonify({
             "status": "success",
             "query": query,
-            "results": recommendations, # This is the full list of items with metadata
-            "synthesis": synthesis_result  # Contains 'winners' and 'proposals'
+            "results": recommendations, 
+            "synthesis": synthesis_result,
+            "execution_log": synthesis_result.get('execution_log', [])
         })
         
     except Exception as e:

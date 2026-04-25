@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,43 +9,334 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <style>
-        body { font-family: 'Outfit', sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .gradient-text { background: linear-gradient(135deg, #60A5FA, #A78BFA, #F472B6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    <style type="text/tailwindcss">
+        :root {
+            --bg-body: #020617; /* slate-950 */
+            --text-primary: #f1f5f9; /* slate-100 */
+            --text-secondary: #94a3b8; /* slate-400 */
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --card-bg: rgba(15, 23, 42, 0.4); /* slate-900/40 */
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --input-bg: rgba(15, 23, 42, 0.5); /* slate-900/50 */
+            --table-header: rgba(30, 41, 59, 0.5); /* slate-800/50 */
+            --table-row-even: rgba(255, 255, 255, 0.05);
+        }
+
+        .light-mode {
+            --bg-body: #f8fafc; /* slate-50 */
+            --text-primary: #0f172a; /* slate-900 */
+            --text-secondary: #334155; /* slate-700 */
+            --glass-bg: #ffffff;
+            --glass-border: #e2e8f0;
+            --card-bg: #ffffff;
+            --border-subtle: #f1f5f9;
+            --input-bg: #ffffff;
+            --table-header: #f1f5f9;
+            --table-row-even: #f8fafc;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #60A5FA, #A78BFA, #F472B6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .expert-input {
+            @apply w-full border rounded-xl px-4 py-3 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all appearance-none;
+            background-color: var(--input-bg);
+            border-color: var(--glass-border);
+            color: var(--text-primary);
+        }
+
+        select.expert-input {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2360A5FA'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1.2em;
+            padding-right: 3rem;
+        }
+
+        select.expert-input option {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+        }
+
+        .expert-label {
+            @apply text-[11px] uppercase tracking-widest text-blue-500 font-bold mb-3 flex items-center gap-2;
+        }
+
+        .section-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            @apply rounded-2xl p-8 mb-8 shadow-sm;
+        }
+
+        th {
+            background-color: var(--table-header);
+            @apply text-amber-600 dark:text-amber-500 font-bold px-4 py-2 text-left border border-slate-200 dark:border-white/10 uppercase tracking-tighter;
+        }
+        
+        td {
+            @apply px-4 py-2 border border-slate-100 dark:border-white/5 font-mono;
+            color: var(--text-secondary);
+        }
+        
+        tr:nth-child(even) {
+            background-color: var(--table-row-even);
+        }
+
+        .prose {
+            color: var(--text-secondary);
+        }
+
+        .theme-toggle-btn {
+            @apply fixed top-6 right-6 p-3 rounded-full glass hover:bg-white/10 transition-all z-50 shadow-xl;
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+<body class="min-h-screen">
+    <button id="themeToggle" class="theme-toggle-btn" title="Alternar tema">
+        <i data-lucide="moon" class="text-blue-400 theme-icon"></i>
+    </button>
     <div class="max-w-6xl mx-auto px-4 py-12">
         <!-- Header -->
         <header class="text-center mb-16">
             <h1 class="text-5xl font-bold mb-4 gradient-text">EDNM Game Designer</h1>
-            <p class="text-slate-400 text-lg max-w-2xl mx-auto text-balance">
-                Genera diseños de juegos serios de alta fidelidad basados en el framework 
+            <p class="text-secondary text-lg max-w-2xl mx-auto text-balance">
+                Genera diseños de juegos serios de alta fidelidad basados en el framework
                 <strong>Elementos, Dinámicas, Narrativas y Mecánicas</strong>.
             </p>
         </header>
 
+        <!-- Case Presets Section -->
+        <section class="mb-6">
+            <div class="flex flex-wrap items-center gap-4">
+                <span class="text-xs uppercase tracking-widest font-bold flex items-center gap-2" style="color: var(--text-secondary)">
+                    <i data-lucide="beaker" size="14"></i> Casos de Prueba:
+                </span>
+                <button onclick="loadPreset(1)"
+                    class="glass px-4 py-2 rounded-xl text-xs font-semibold text-blue-300 hover:bg-blue-500/20 border border-blue-500/20 transition-all flex items-center gap-2">
+                    <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    Caso 1: Minería (Atmósfera)
+                </button>
+                <button onclick="loadPreset(2)"
+                    class="glass px-4 py-2 rounded-xl text-xs font-semibold text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 transition-all flex items-center gap-2">
+                    <span class="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    Caso 2: Maquinaria (Complejo)
+                </button>
+                <button onclick="resetForm()"
+                    class="glass px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/10 border border-white/10 transition-all" style="color: var(--text-secondary)">
+                    Resetear Filtros
+                </button>
+            </div>
+        </section>
+
         <!-- Main Input Section -->
         <section class="mb-12">
             <div class="glass p-8 rounded-2xl shadow-2xl">
-                <div class="flex items-center gap-3 mb-4 text-blue-400">
-                    <i data-lucide="sparkles"></i>
-                    <h2 class="text-xl font-semibold">¿Qué juego deseas diseñar?</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-3 text-blue-400">
+                        <i data-lucide="sparkles"></i>
+                        <h2 class="text-xl font-semibold">Configuración de Diseño</h2>
+                    </div>
+                    <button id="toggleMode"
+                        class="text-xs px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-all flex items-center gap-2">
+                        <i data-lucide="settings-2" size="14"></i>
+                        <span>Modo Experto (Investigación)</span>
+                    </button>
                 </div>
-                <textarea id="promptInput" rows="4" 
-                    class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 mb-6"
-                    placeholder="Describe los objetivos, el público y el contexto de tu juego..."></textarea>
-                
+
+                <!-- Simple Mode -->
+                <div id="simpleMode">
+                    <textarea id="promptInput" rows="4"
+                        class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600 mb-6"
+                        placeholder="Describe los objetivos, el público y el contexto de tu juego..."></textarea>
+                </div>
+
+                <!-- Expert Mode (Hidden by default) -->
+                <div id="expertMode" class="hidden space-y-6 mb-8 mt-2">
+
+                    <!-- Section 1: Contexto & Usuario -->
+                    <div class="section-card">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="icon-box">
+                                <i data-lucide="file-text" size="20"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold" style="color: var(--text-primary)">Entradas del Contexto</h3>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <label class="expert-label">Contexto</label>
+                                <textarea id="exp_Context" class="expert-input h-32"
+                                    placeholder="Describa el entorno, desafíos y marco teórico de la investigación..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="space-y-2">
+                                <label class="expert-label">Sector</label>
+                                <input id="exp_Sector" class="expert-input" placeholder="Ej: Educación Superior">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Usuarios Target</label>
+                                <input id="exp_Users" class="expert-input" placeholder="Ej: Estudiantes de Ing.">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Capacidad a Desarrollar</label>
+                                <input id="exp_Capability" class="expert-input"
+                                    placeholder="Ej: Competencia específica">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="expert-label">Objetivo de Aprendizaje</label>
+                                <input id="exp_Learning_Objective" class="expert-input"
+                                    placeholder="Ej: Reforzar atención selectiva">
+                            </div>
+
+                        </div>
+                    </div>
+
+
+                    <!-- Section 3: Diseño Técnico -->
+                    <div class="section-card">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="icon-box text-purple-400">
+                                <i data-lucide="pen-tool" size="20"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold" style="color: var(--text-primary)">Diseño del Juego Serio</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                            <div class="space-y-2">
+                                <label class="expert-label">Juego Serio</label>
+                                <input id="exp_Serious_Game_Type" class="expert-input" placeholder="Ej: Aventura">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Actividades de Aprendizaje</label>
+                                <input id="exp_Learning_Activities" class="expert-input"
+                                    placeholder="Ver, construir, escuchar...">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Recursos de Aprendizaje</label>
+                                <input id="exp_Learning_Resources" class="expert-input"
+                                    placeholder="Mapas, temporizadores, señales...">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="expert-label">Mecánicas Básicas (Gameplay Bricks)</label>
+                                <input id="exp_Basic_Mechanics" class="expert-input border-blue-500/30"
+                                    placeholder="Escribir y emparejar">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 4: Usuario -->
+                    <div class="section-card">
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="icon-box">
+                                <i data-lucide="file-text" size="20"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold" style="color: var(--text-primary)">Entradas para el Perfilamiento de Usuario</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Nivel 1: Tipo de Función -->
+                            <div class="space-y-3">
+                                <label class="expert-label">Tipo Función Cognitiva</label>
+                                <select id="exp_Cognitive_Level" class="expert-input">
+                                    <option value="" selected disabled>Seleccione nivel...</option>
+                                    <option value="Basic">Básica</option>
+                                    <option value="Complex">Compleja</option>
+                                </select>
+                            </div>
+
+                            <!-- Nivel 2: Función específica -->
+                            <div id="cognitiveFuncContainer"
+                                class="space-y-3 opacity-50 pointer-events-none transition-all">
+                                <label class="expert-label">Función Cognitiva</label>
+                                <select id="exp_Cognitive_Function" class="expert-input">
+                                    <option value="" selected disabled>Primero elija nivel...</option>
+                                </select>
+                            </div>
+
+                            <!-- Nivel 3: Funciones Ejecutivas (Solo si se elige Executive en Nivel 2) -->
+                            <div id="executiveFuncContainer" class="space-y-3 hidden transition-all">
+                                <label class="expert-label">Función Ejecutiva</label>
+                                <select id="exp_Cognitive_Exec" class="expert-input">
+                                    <option value="" selected disabled>Elegir función...</option>
+                                    <option value="Inhibitory Control">Inhibitory Control</option>
+                                    <option value="Working Memory">Working Memory</option>
+                                    <option value="Cognitive Flexibility">Cognitive Flexibility</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                            <div class="space-y-3">
+                                <label class="expert-label">Emoción</label>
+                                <select id="exp_Emotion" class="expert-input">
+                                    <option value="" selected disabled>Seleccione emoción...</option>
+                                    <option value="anger">Anger (Ira)</option>
+                                    <option value="disgust">Disgust (Asco)</option>
+                                    <option value="fear">Fear (Miedo)</option>
+                                    <option value="happiness">Happiness (Alegría)</option>
+                                    <option value="sadness">Sadness (Tristeza)</option>
+                                    <option value="surprise">Surprise (Sorpresa)</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="expert-label">Motivación Predominante</label>
+                                <select id="exp_Motivation" class="expert-input">
+                                    <option value="" selected disabled>Seleccione motivación...</option>
+                                    <option value="Intrínseca">Intrínseca</option>
+                                    <option value="Extrínseca">Extrínseca</option>
+                                </select>
+                            </div>
+                            <div class="space-y-3">
+                                <label class="expert-label">Estilo Aprendizaje VARK</label>
+                                <select id="exp_VARK_Style" class="expert-input">
+                                    <option value="" disabled selected>Seleccione un estilo...</option>
+                                    <option value="Visual">Visual</option>
+                                    <option value="Auditivo">Auditivo</option>
+                                    <option value="Lecto-Escritor">Lecto-Escritor</option>
+                                    <option value="Kinestésico">Kinestésico</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6 mt-6">
+                            <div class="space-y-3">
+                                <label class="expert-label">Perfil del Usuario</label>
+                                <textarea id="exp_User_Profile" class="expert-input h-32"
+                                    placeholder="Características psicográficas, demográficas y necesidades específicas del usuario..."></textarea>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
                 <div class="flex justify-between items-center">
-                    <div id="statusMessage" class="text-sm text-slate-500 font-mono">Listo para diseñar.</div>
-                    <button id="generateBtn" 
+                    <div id="statusMessage" class="text-sm font-mono" style="color: var(--text-secondary)">Modo: Estándar</div>
+                    <button id="generateBtn"
                         class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-xl transition-all flex items-center gap-2 group">
                         <span id="btnText">Generar Propuesta</span>
                         <i data-lucide="arrow-right" class="group-hover:translate-x-1 transition-transform"></i>
@@ -56,32 +348,45 @@
         <!-- Loading / Progress Section (Hidden by default) -->
         <section id="loadingSection" class="hidden mb-12">
             <div class="flex flex-col items-center justify-center p-12 glass rounded-2xl">
-                <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
+                <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6">
+                </div>
                 <h3 class="text-2xl font-bold mb-2">Orquestando LLMs...</h3>
-                <p class="text-slate-400 animate-pulse">Analizando perspectivas EDNM y consultando modelos especializados.</p>
+                <p class="animate-pulse" style="color: var(--text-secondary)">Analizando dimensiones EDNM y consultando modelos
+                    especializados.</p>
             </div>
         </section>
 
         <!-- Results Section (Hidden by default) -->
         <main id="resultsOutput" class="hidden space-y-16">
-            
+
+            <!-- 0. Research Technical Sheet -->
+            <section id="researchSection" class="hidden">
+                <div class="flex items-center gap-3 mb-6">
+                    <i data-lucide="microscope" class="text-blue-400"></i>
+                    <h2 class="text-3xl font-bold">Concepto de Investigación Científica</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="researchGrid">
+                    <!-- Research parameters injected here -->
+                </div>
+            </section>
+
             <!-- 1. Full Analysis Table -->
             <section>
                 <div class="flex items-center gap-3 mb-6">
                     <i data-lucide="layers" class="text-purple-400"></i>
                     <h2 class="text-3xl font-bold">1. Análisis Completo</h2>
                 </div>
-                <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+                <div class="overflow-hidden rounded-xl border" style="background: var(--card-bg); border-color: var(--glass-border)">
                     <table class="w-full text-left">
-                        <thead class="bg-slate-800/80 text-slate-300 text-sm uppercase tracking-wider">
+                        <thead style="background: var(--table-header); color: var(--text-primary)">
                             <tr>
-                                <th class="px-6 py-4">Perspectiva</th>
-                                <th class="px-6 py-4">Componente</th>
-                                <th class="px-6 py-4">Score</th>
-                                <th class="px-6 py-4">Análisis</th>
+                                <th class="px-6 py-4 w-32">Dimension</th>
+                                <th class="px-6 py-4">Component</th>
+                                <th class="px-6 py-4 w-28">Score</th>
+                                <th class="px-6 py-4">Analysis</th>
                             </tr>
                         </thead>
-                        <tbody id="fullResultsTable" class="divide-y divide-slate-800">
+                        <tbody id="fullResultsTable" class="divide-y" style="border-color: var(--glass-border)">
                             <!-- Rows injected here -->
                         </tbody>
                     </table>
@@ -103,17 +408,112 @@
             <section>
                 <div class="flex items-center gap-3 mb-6">
                     <i data-lucide="book-open" class="text-emerald-400"></i>
-                    <h2 class="text-3xl font-bold">3. Propuesta de Diseño Integrada</h2>
+                    <h2 class="text-3xl font-bold">3. Propuestas Generadas</h2>
                 </div>
                 <div id="proposalsContainer" class="space-y-8">
                     <!-- Proposal cards injected here -->
                 </div>
             </section>
 
+            <!-- 4. Quality Metrics (BERTScore) -->
+            <section id="qualitySection" class="hidden">
+                <div class="flex items-center gap-3 mb-6">
+                    <i data-lucide="shield-check" class="text-blue-400"></i>
+                    <h2 class="text-3xl font-bold">4. Análisis de Calidad Técnica (BERTScore)</h2>
+                </div>
+                <div class="glass p-8 rounded-2xl overflow-hidden">
+                    <p class="mb-6 text-sm" style="color: var(--text-secondary)">
+                        Evaluación semántica de las propuestas contra el criterio experto de investigación usando
+                        <strong>BERTScore (Multilingüe)</strong>.
+                    </p>
+                    <div class="overflow-hidden rounded-xl border" style="background: var(--card-bg); border-color: var(--glass-border)">
+                        <table class="w-full text-left">
+                            <thead style="background: var(--table-header); color: var(--text-primary)">
+                                <tr>
+                                    <th class="px-6 py-4">Modelo LLM</th>
+                                    <th class="px-6 py-4">Precision (Ajuste)</th>
+                                    <th class="px-6 py-4">Recall (Cobertura)</th>
+                                    <th class="px-6 py-4 font-bold text-blue-400">F1 Score (Calidad)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="qualityTableBody" class="divide-y" style="border-color: var(--glass-border)">
+                                <!-- Quality metrics injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Technical Trace Log (Execution Log) -->
+            <section id="traceSection" class="hidden">
+                <button id="toggleTrace"
+                    class="w-full flex items-center justify-between p-6 glass rounded-2xl border-l-4 border-l-amber-500 hover:bg-white/5 transition-all">
+                    <div class="flex items-center gap-4">
+                        <i data-lucide="terminal" class="text-amber-500"></i>
+                        <h2 class="text-2xl font-bold">5. Trazabilidad Técnica de la Ejecución</h2>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <button id="copyLogBtn"
+                            class="p-2 hover:bg-white/10 rounded-lg text-slate-400 transition-all flex items-center gap-2 text-xs"
+                            title="Copiar logs al portapapeles">
+                            <i data-lucide="copy" size="14"></i>
+                            <span>Copiar Logs</span>
+                        </button>
+                        <i data-lucide="chevron-down" id="traceChevron" class="transition-transform"></i>
+                    </div>
+                </button>
+                <div id="traceContent" class="hidden mt-4 space-y-4">
+                    <div id="logContainer"
+                        style="background: var(--bg-body); border-color: var(--glass-border)"
+                        class="border rounded-xl p-6 font-mono text-xs overflow-auto max-h-[600px] space-y-4">
+                        <!-- Logs injected here -->
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
+        };
+    </script>
+
     <script>
+        // --- THEME SYSTEM ---
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('.theme-icon');
+        const body = document.body;
+
+        function setTheme(theme) {
+            const isLight = theme === 'light';
+            if (isLight) {
+                body.classList.add('light-mode');
+                themeIcon.setAttribute('data-lucide', 'sun');
+                themeIcon.classList.replace('text-blue-400', 'text-amber-500');
+            } else {
+                body.classList.remove('light-mode');
+                themeIcon.setAttribute('data-lucide', 'moon');
+                themeIcon.classList.replace('text-amber-500', 'text-blue-400');
+            }
+            
+            // Sync all prose containers
+            document.querySelectorAll('.prose').forEach(p => {
+                p.classList.toggle('prose-invert', !isLight);
+            });
+
+            lucide.createIcons();
+            localStorage.setItem('theme', theme);
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isLight = body.classList.contains('light-mode');
+            setTheme(isLight ? 'dark' : 'light');
+        });
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        setTheme(savedTheme);
+
+
         // Initialize Lucide icons
         lucide.createIcons();
 
@@ -137,29 +537,219 @@
             'mechanic': 'text-orange-400'
         };
 
-        generateBtn.addEventListener('click', async () => {
+        // Expert Mode Toggle
+        let isExpertMode = false;
+        const toggleBtn = document.getElementById('toggleMode');
+        const simpleMode = document.getElementById('simpleMode');
+        const expertMode = document.getElementById('expertMode');
+
+        toggleBtn.addEventListener('click', () => {
+            isExpertMode = !isExpertMode;
+            simpleMode.classList.toggle('hidden', isExpertMode);
+            expertMode.classList.toggle('hidden', !isExpertMode);
+            toggleBtn.querySelector('span').innerText = isExpertMode ? 'Modo Simple' : 'Modo Experto (Investigación)';
+            toggleBtn.classList.toggle('bg-blue-500/20', !isExpertMode);
+            toggleBtn.classList.toggle('bg-purple-500/20', isExpertMode);
+        });
+
+        // Technical Trace Toggle
+        const toggleTrace = document.getElementById('toggleTrace');
+        const traceContent = document.getElementById('traceContent');
+        const traceChevron = document.getElementById('traceChevron');
+
+        if (toggleTrace) {
+            toggleTrace.addEventListener('click', () => {
+                traceContent.classList.toggle('hidden');
+                traceChevron.classList.toggle('rotate-180');
+            });
+        }
+
+        // Cascading Dropdown Logic for Cognitive Functions
+        const cognitiveMap = {
+            "Basic": ["Perception", "Attention", "Memory"],
+            "Complex": ["Praxia", "Language", "Executive Functions"]
+        };
+
+        const cognitiveLevel = document.getElementById('exp_Cognitive_Level');
+        const cognitiveFunc = document.getElementById('exp_Cognitive_Function');
+        const cognitiveExec = document.getElementById('exp_Cognitive_Exec');
+        const cognitiveContainer = document.getElementById('cognitiveFuncContainer');
+        const executiveContainer = document.getElementById('executiveFuncContainer');
+
+        cognitiveLevel.addEventListener('change', () => {
+            const level = cognitiveLevel.value;
+            const options = cognitiveMap[level] || [];
+
+            cognitiveFunc.innerHTML = '<option value="" selected disabled>Elija función específica...</option>' +
+                options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+            cognitiveContainer.classList.remove('opacity-50', 'pointer-events-none');
+            executiveContainer.classList.add('hidden');
+            cognitiveExec.value = "";
+        });
+
+        cognitiveFunc.addEventListener('change', () => {
+            if (cognitiveFunc.value === "Executive Functions") {
+                executiveContainer.classList.remove('hidden');
+            } else {
+                executiveContainer.classList.add('hidden');
+                cognitiveExec.value = "";
+            }
+        });
+
+        // --- PRESETS SYSTEM ---
+        const PRESETS = {
+            1: {
+                prompt: "Reforzar la atención selectiva y percepción de señales de advertencia",
+                user_id: 1,
+                expert: true,
+                research_data: {
+                    Context: "En una mina subterránea, un grupo de trabajadores ingresa a un nivel sin verificar la atmósfera. Una acumulación de metano, combinada con polvo de carbón, genera una explosión cuando los trabajadores realizan un encendido eléctrico no autorizado. Los fallos identificados fueron: monitoreo atmosférico inexistente, baja percepción del riesgo, supervisión insuficiente y formación incompleta sobre gases.",
+                    Sector: "Miner",
+                    Users: "Mining workers",
+                    Capability: "Supervisión",
+                    Learning_Objective: "Reforzar la atención selectiva y percepción de señales de advertencia",
+                    Cognitive_Level: "Basic",
+                    Cognitive_Function: "Attention",
+                    Emotion: "fear",
+                    VARK_Style: "Visual",
+                    Learning_Activities: "See, build, listen, sing, move ",
+                    Learning_Resources: "Images, map, timer, signal",
+                    Serious_Game_Type: "Adventure",
+                    Basic_Mechanics: "Write and match",
+                    Motivation: "Extrínseca",
+                    User_Profile: "The learning style is aural and visual, the experienced emotion is fear, the targeted cognitive functions are selective attention and perception, and the predominant motivation is extrinsic"
+                }
+            },
+            2: {
+                prompt: "Reinforce decision-making under pressure",
+                user_id: 1,
+                expert: true,
+                research_data: {
+                    Context: "Un operador pierde el control del cargador frontal en una pendiente. El vehículo derrapa, golpea una banca de terreno y se vuelca, afectando al conductor y a un ayudante que estaba demasiado cerca. Los fallos identificados: Exceso de carga, control deficiente del equipo y falta de señalización y rutas seguras.",
+                    Sector: "Miner",
+                    Users: "Mining workers",
+                    Capability: "Decision-making under pressure",
+                    Learning_Objective: "Reinforce decision-making under pressure",
+                    Cognitive_Level: "Complex",
+                    Cognitive_Function: "Executive Functions",
+                    Cognitive_Exec: "Working Memory",
+                    Emotion: "anger",
+                    VARK_Style: "Visual",
+                    Learning_Activities: "See, Exit",
+                    Learning_Resources: "Map, Timer",
+                    Serious_Game_Type: "Driver",
+                    Basic_Mechanics: "Move and avoid",
+                    Motivation: "Extrínseca",
+                    User_Profile: "The learning style is visual, the experienced emotion is anger, the targeted cognitive function is working memory, and the predominant motivation is extrinsic"
+                }
+            }
+        };
+
+        function loadPreset(id) {
+            const data = PRESETS[id];
+            if (!data) return;
+
+            // 1. Basic Fields
+            document.getElementById('promptInput').value = data.prompt;
+
+            // 2. Expert Mode activation
+            if (data.expert && document.getElementById('expertMode').classList.contains('hidden')) {
+                toggleExpertMode();
+            }
+
+            // 3. Populate Expert Fields
+            const rd = data.research_data;
+            for (const key in rd) {
+                const el = document.getElementById('exp_' + key);
+                if (el) {
+                    el.value = rd[key];
+                    // Trigger change for cascading selects
+                    if (key === 'Cognitive_Level') {
+                        el.dispatchEvent(new Event('change'));
+                        // Small delay for dynamic select population
+                        setTimeout(() => {
+                            if (rd.Cognitive_Function) {
+                                document.getElementById('exp_Cognitive_Function').value = rd.Cognitive_Function;
+                                document.getElementById('exp_Cognitive_Function').dispatchEvent(new Event('change'));
+
+                                // Third level nesting (Executive Functions)
+                                setTimeout(() => {
+                                    if (rd.Cognitive_Exec) {
+                                        document.getElementById('exp_Cognitive_Exec').value = rd.Cognitive_Exec;
+                                    }
+                                }, 50);
+                            }
+                        }, 50);
+                    }
+                }
+            }
+
+            // Notification toast or status
+            document.getElementById('statusMessage').innerText = "Status: Caso " + id + " cargado";
+        }
+
+        function resetForm() {
+            document.getElementById('promptInput').value = "";
+            const inputs = document.querySelectorAll('.expert-input');
+            inputs.forEach(i => i.value = "");
+            document.getElementById('statusMessage').innerText = "Status: Formulario reseteado";
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', async () => {
             const prompt = promptInput.value.trim();
-            if (!prompt) return alert('Por favor, describe tu idea de juego.');
+            let researchData = null;
+
+            if (isExpertMode) {
+                // Determine the most specific cognitive function selected
+                let finalCognitiveFunc = cognitiveFunc.value;
+                if (cognitiveFunc.value === "Executive Functions" && cognitiveExec.value) {
+                    finalCognitiveFunc = cognitiveExec.value;
+                }
+
+                researchData = {
+                    Context: document.getElementById('exp_Context').value,
+                    Sector: document.getElementById('exp_Sector').value,
+                    Users: document.getElementById('exp_Users').value,
+                    Capability: document.getElementById('exp_Capability').value,
+                    Learning_Objective: document.getElementById('exp_Learning_Objective').value,
+                    Cognitive_Function: finalCognitiveFunc,
+                    Emotion: document.getElementById('exp_Emotion').value,
+                    VARK_Style: document.getElementById('exp_VARK_Style').value,
+                    Learning_Activities: document.getElementById('exp_Learning_Activities').value,
+                    Learning_Resources: document.getElementById('exp_Learning_Resources').value,
+                    Serious_Game_Type: document.getElementById('exp_Serious_Game_Type').value,
+                    Basic_Mechanics: document.getElementById('exp_Basic_Mechanics').value,
+                    Motivation: document.getElementById('exp_Motivation').value,
+                    User_Profile: document.getElementById('exp_User_Profile').value
+                };
+            }
+
+            if (!prompt && !isExpertMode) return alert('Por favor, describe tu idea de juego.');
 
             // UI State
             generateBtn.disabled = true;
             generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
             loadingSection.classList.remove('hidden');
             resultsOutput.classList.add('hidden');
-            statusMessage.innerText = "Consultando con la IA (Esto puede tardar unos segundos)...";
+            statusMessage.innerText = isExpertMode ? "Calculando con items de investigación..." : "Consultando con la IA (Esto puede tardar unos segundos)...";
 
             try {
                 const response = await fetch('/api/recommend', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: prompt, user_id: 1 })
+                    body: JSON.stringify({
+                        prompt: prompt || (isExpertMode ? researchData.Learning_Objective : 'Diseño Especializado'),
+                        user_id: 1,
+                        research_data: researchData
+                    })
                 });
 
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
 
                 renderResults(data);
-                
+
                 loadingSection.classList.add('hidden');
                 resultsOutput.classList.remove('hidden');
                 statusMessage.innerText = "Propuesta generada con éxito.";
@@ -177,11 +767,11 @@
             // 1. Full Results Table
             const tableBody = document.getElementById('fullResultsTable');
             tableBody.innerHTML = data.results.map(item => `
-                <tr class="hover:bg-slate-800/30 transition-colors">
+                <tr class="hover:bg-blue-500/5 transition-colors">
                     <td class="px-6 py-4 font-semibold ${perspectiveColors[item.perspective] || ''}">${item.perspective.toUpperCase()}</td>
-                    <td class="px-6 py-4 font-medium">${item.title}</td>
-                    <td class="px-6 py-4 font-mono text-sm text-slate-400">${item.rank_score.toFixed(3)}</td>
-                    <td class="px-6 py-4 text-sm text-slate-400 line-clamp-2 max-w-xs" title="${item.llm_reasoning}">${item.llm_reasoning}</td>
+                    <td class="px-6 py-4 font-medium" style="color: var(--text-primary)">${item.title}</td>
+                    <td class="px-6 py-4 font-mono text-sm" style="color: var(--text-secondary)">${item.rank_score.toFixed(3)}</td>
+                    <td class="px-6 py-4 text-xs leading-relaxed italic" style="color: var(--text-secondary)" title="${item.llm_reasoning}">${item.llm_reasoning}</td>
                 </tr>
             `).join('');
 
@@ -196,32 +786,122 @@
                             <i data-lucide="${perspectiveIcons[cat] || 'package'}"></i>
                             <span class="text-xs font-bold uppercase tracking-wider">${cat}</span>
                         </div>
-                        <h4 class="text-xl font-bold mb-2">${title}</h4>
-                        <p class="text-sm text-slate-400 font-light leading-relaxed">${reason}</p>
+                        <h4 class="text-xl font-bold mb-2" style="color: var(--text-primary)">${title}</h4>
+                        <p class="text-sm font-light leading-relaxed" style="color: var(--text-secondary)">${reason}</p>
                     </div>
                 `;
             }).join('');
 
             // 3. Proposals
             const container = document.getElementById('proposalsContainer');
-            container.innerHTML = Object.entries(data.synthesis.proposals).map(([model, text]) => `
-                <div class="glass p-8 rounded-2xl group relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <i data-lucide="cpu" size="64"></i>
+            const bestModel = data.synthesis.best_proposal?.model;
+
+            container.innerHTML = Object.entries(data.synthesis.proposals).map(([model, text]) => {
+                const isBest = model === bestModel;
+                return `
+                    <div class="glass p-8 rounded-2xl group relative overflow-hidden ${isBest ? 'ring-2 ring-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : ''}">
+                        ${isBest ? `
+                            <div class="absolute top-0 right-0 bg-emerald-500 text-white px-4 py-1 rounded-bl-xl text-xs font-bold flex items-center gap-1 shadow-lg z-10">
+                                <i data-lucide="award" size="14"></i>
+                                MEJOR CALIDAD TÉCNICA
+                            </div>
+                        ` : ''}
+                        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i data-lucide="cpu" size="64"></i>
+                        </div>
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-2 h-8 ${isBest ? 'bg-emerald-500' : 'bg-slate-700'} rounded-full"></div>
+                            <h3 class="text-2xl font-bold tracking-tight">Propuesta de ${model.toUpperCase()}</h3>
+                        </div>
+                        <div class="prose ${body.classList.contains('light-mode') ? '' : 'prose-invert'} prose-emerald max-w-none leading-relaxed font-light" style="color: var(--text-secondary)">
+                            ${marked.parse(text)}
+                        </div>
                     </div>
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="w-2 h-8 bg-emerald-500 rounded-full"></div>
-                        <h3 class="text-2xl font-bold tracking-tight">Propuesta de ${model.toUpperCase()}</h3>
+                `;
+            }).join('');
+
+            // 4. Quality Metrics
+            const qualitySection = document.getElementById('qualitySection');
+            const qualityTableBody = document.getElementById('qualityTableBody');
+            if (data.synthesis.quality_metrics) {
+                qualitySection.classList.remove('hidden');
+                qualityTableBody.innerHTML = data.synthesis.quality_metrics.map(q => `
+                    <tr class="hover:bg-blue-500/5 transition-colors ${q.LLM === bestModel ? 'bg-emerald-500/5' : ''}">
+                        <td class="px-6 py-4 font-bold flex items-center gap-2" style="color: var(--text-primary)">
+                            ${q.LLM === bestModel ? '<i data-lucide="award" class="text-emerald-400" size="16"></i>' : ''}
+                            ${q.LLM.toUpperCase()}
+                        </td>
+                        <td class="px-6 py-4 font-mono text-sm" style="color: var(--text-secondary)">${q.Precision.toFixed(4)}</td>
+                        <td class="px-6 py-4 font-mono text-sm" style="color: var(--text-secondary)">${q.Recall.toFixed(4)}</td>
+                        <td class="px-6 py-4 font-mono font-bold text-blue-500">${q.F1.toFixed(4)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // 0. Research Context
+            const researchSection = document.getElementById('researchSection');
+            const researchGrid = document.getElementById('researchGrid');
+            if (data.synthesis.research_context) {
+                researchSection.classList.remove('hidden');
+                const ctx = data.synthesis.research_context;
+                const relevantFields = [
+                    { label: 'Función Cognitiva', val: ctx.Cognitive_Function, icon: 'brain' },
+                    { label: 'Estilo VARK', val: ctx.VARK_Style, icon: 'eye' },
+                    { label: 'Emoción Diana', val: ctx.Emotion, icon: 'heart' },
+                    { label: 'Sector', val: ctx.Sector, icon: 'briefcase' },
+                    { label: 'Objetivo', val: ctx.Learning_Objective, icon: 'target' },
+                    { label: 'Perfil Usuario', val: ctx.User_Profile, icon: 'users' }
+                ];
+                researchGrid.innerHTML = relevantFields.map(f => `
+                    <div class="glass p-4 rounded-xl flex items-start gap-3 border-l-4 border-blue-500">
+                        <div class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                            <i data-lucide="${f.icon}" size="18"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">${f.label}</p>
+                            <p class="text-sm font-semibold text-slate-200">${f.val || 'N/A'}</p>
+                        </div>
                     </div>
-                    <div class="prose prose-invert prose-emerald max-w-none text-slate-300 leading-relaxed font-light">
-${marked.parse(text)}
+                `).join('');
+            }
+
+            // 5. Technical Trace Log
+            const traceSection = document.getElementById('traceSection');
+            const logContainer = document.getElementById('logContainer');
+            const copyLogBtn = document.getElementById('copyLogBtn');
+
+            if (data.execution_log) {
+                traceSection.classList.remove('hidden');
+                logContainer.innerHTML = data.execution_log.map(log => `
+                    <div class="border-b border-white/5 pb-6 last:border-0">
+                        <div class="text-amber-500 font-bold mb-3 uppercase text-[10px] tracking-widest flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></span>
+                            ${log.step}
+                        </div>
+                        <div class="prose ${body.classList.contains('light-mode') ? '' : 'prose-invert'} prose-xs max-w-none tracking-tight leading-relaxed select-all" style="color: var(--text-secondary)">
+                            ${marked.parse(log.details)}
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+
+                // Copy functionality
+                if (copyLogBtn) {
+                    copyLogBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        const fullLog = data.execution_log.map(l => `[${l.step}]\n${l.details}`).join('\n\n' + '='.repeat(30) + '\n\n');
+                        navigator.clipboard.writeText(fullLog).then(() => {
+                            const span = copyLogBtn.querySelector('span');
+                            span.innerText = '¡Copiado!';
+                            setTimeout(() => span.innerText = 'Copiar Logs', 2000);
+                        });
+                    };
+                }
+            }
 
             // Re-initialize icons for new elements
             lucide.createIcons();
         }
     </script>
 </body>
+
 </html>

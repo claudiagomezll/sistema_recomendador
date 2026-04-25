@@ -1,13 +1,17 @@
 import numpy as np
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from .config import ACTIVE_LLMS, VERBOSE, TOP_K_CANDIDATES, DATASETS, PROMPT_TEMPLATES
+from .config import (
+    ACTIVE_LLMS, VERBOSE, TOP_K_CANDIDATES, DATASETS, PROMPT_TEMPLATES,
+    EVALUATE_QUALITY, BERT_SCORE_MODEL, BERT_SCORE_LANG
+)
 from .llm_clients import create_llm_provider
 from .vector_db import rag_retrieval, get_encoder
 from .algorithms import (
     calculate_weights, fcd_recommendations, fuzzy_match_title,
     calculate_ranking_rrf, mmr_diversification
 )
+from .evaluation import calculate_berts_metrics, get_best_model_info
 
 class RecommenderOrchestrator:
     def __init__(self, df, collection, ratings_df=None, user_item_matrix=None, user_id_map=None, item_id_map=None):
@@ -18,8 +22,76 @@ class RecommenderOrchestrator:
         self.user_id_map = user_id_map
         self.item_id_map = item_id_map
         self.encoder = get_encoder()
+        self.current_research_context = None
+        self.execution_log = []
+        
+        # Calculate system metadata for logging
+        self.system_metadata = {
+            "df_items": len(df),
+            "df_cols": list(df.columns),
+            "matrix_active": ratings_df is not None and user_id_map is not None,
+            "sparsity": 0
+        }
+        
+        if self.system_metadata["matrix_active"]:
+            try:
+                n_users = len(user_id_map)
+                n_items = len(item_id_map)
+                n_ratings = len(ratings_df)
+                self.system_metadata["sparsity"] = (1.0 - (n_ratings / (n_users * n_items))) * 100
+                self.system_metadata["dimensions"] = f"{n_users} Users x {n_items} Items"
+            except:
+                pass
 
-    def query_all_llms(self, query, candidates, perspective=None, json_mode=True):
+    def _log(self, step, details):
+        """Adds a technical step to the execution log."""
+        self.execution_log.append({
+            "step": step,
+            "details": str(details)
+        })
+        if VERBOSE:
+            print(f"   📝 Logged: {step}")
+
+    def set_research_context(self, research_data):
+        """Manually sets the research context from structured expert input."""
+        if VERBOSE: print("🧪 Cargando contexto de investigación manual (Modo Experto)...")
+        # Ensure keys match expected template placeholders
+        self.current_research_context = research_data
+        return self.current_research_context
+
+    def extract_research_parameters(self, query):
+        if VERBOSE: print("🧬 Extrayendo parámetros científicos de investigación...")
+        prompt = PROMPT_TEMPLATES['research_extraction'].format(query=query)
+        
+        # Use a reliable LLM for extraction (e.g. gpt4o_mini or the first active one)
+        llm_name = list(ACTIVE_LLMS.keys())[0]
+        cfg = ACTIVE_LLMS[llm_name]
+        provider = create_llm_provider(cfg['provider'], cfg['model'], api_key=cfg['api_key'])
+        
+        try:
+            raw_response = provider.generate(prompt)
+            import json
+            import re
+            # Extract JSON block
+            json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
+            if json_match:
+                self.current_research_context = json.loads(json_match.group(0))
+            else:
+                self.current_research_context = json.loads(raw_response)
+            
+            if VERBOSE: print(f"   ✅ Parámetros extraídos: {self.current_research_context.get('Cognitive_Function', 'N/A')} | {self.current_research_context.get('VARK_Style', 'N/A')}")
+        except Exception as e:
+            if VERBOSE: print(f"   ⚠️ Error extrayendo parámetros: {e}")
+            self.current_research_context = {
+                "Sector": "General", "Context": "Gaming", "Users": "Players",
+                "Learning_Objective": query, "Cognitive_Function": "General",
+                "Emotion": "Engagement", "VARK_Style": "Multi-modal"
+            }
+        
+        self._log("Extracción de Parámetros", f"Prompt: {prompt}\n\nResultado: {self.current_research_context}")
+        return self.current_research_context
+
+    def query_all_llms(self, query, candidates, perspective=None, json_mode=True, research_context=None):
         if perspective and perspective in PROMPT_TEMPLATES:
             # Check if it's the synthesis prompt which needs special placeholders
             if perspective == 'synthesis' and isinstance(candidates, dict):
@@ -33,12 +105,29 @@ class RecommenderOrchestrator:
             else:
                 # Build context for standard perspective prompts
                 context = ""
-                # Build context from candidates if provided
                 if hasattr(candidates, 'iterrows'):
                     for _, row in candidates.iterrows():
                         context += f"- ID: {row['id']}, Título: {row['title']}, Descripción: {row['description']}\n"
-                    prompt = PROMPT_TEMPLATES[perspective].format(query=query, context=context)
-                else:
+
+                # Build full context for the rich expert prompts
+                format_args = {
+                    'query': query,
+                    'context': context,
+                    'Sector': 'N/A', 'Context': 'N/A', 'Learning_Objective': query,
+                    'Cognitive_Function': 'N/A', 'Capability': 'N/A', 'VARK_Style': 'N/A',
+                    'Emotion': 'N/A', 'Motivation': 'N/A', 'Learning_Activities': 'N/A',
+                    'Learning_Resources': 'N/A', 'Basic_Mechanics': 'N/A'
+                }
+                
+                # Override with actual research context if provided
+                if research_context:
+                    for k, v in research_context.items():
+                        if v: format_args[k] = v
+                
+                try:
+                    prompt = PROMPT_TEMPLATES[perspective].format(**format_args)
+                except KeyError as e:
+                    if VERBOSE: print(f"   ⚠️ Prompt formatting error (missing key {e}): falling back to simple format")
                     prompt = PROMPT_TEMPLATES[perspective].format(query=query, context=context)
         else:
             # Fallback to default simple prompt
@@ -48,12 +137,14 @@ class RecommenderOrchestrator:
                     prompt += f"- {row['title']}: {row['description']}\n"
             prompt += "\nSelect the top 5 most relevant items and explain why. Format as JSON: [{\"recommendation\": \"Title\", \"description\": \"Why\", \"ranking\": 1}, ...]"
 
+        self._log(f"Prompt Dimensión: {perspective}", prompt)
         results = {}
         with ThreadPoolExecutor() as executor:
             futures = {
                 executor.submit(
                     create_llm_provider(cfg['provider'], cfg['model'], api_key=cfg['api_key']).generate, 
-                    prompt
+                    prompt, 
+                    json_mode=json_mode
                 ): name for name, cfg in ACTIVE_LLMS.items()
             }
             for future in as_completed(futures):
@@ -84,6 +175,9 @@ class RecommenderOrchestrator:
                     
                     if isinstance(parsed_result, list):
                         results[name] = parsed_result
+                        # Log truncated response for readability
+                        trunc_response = (raw_result[:400] + '...') if len(raw_result) > 400 else raw_result
+                        self._log(f"Expert: {name} ({perspective})", f"Respuesta parcial:\n{trunc_response}\n\n✅ Items extraídos: {len(parsed_result)}")
                         if VERBOSE: print(f"   ✅ LLM {name} entregó {len(parsed_result)} recomendaciones.")
                     else:
                         if VERBOSE: print(f"   ⚠️ Warning LLM {name}: Expected list, got {type(parsed_result).__name__}")
@@ -135,11 +229,45 @@ class RecommenderOrchestrator:
                             print(f"      ✅ Validado: {valid_item['title']} (Score: {sim_norm:.3f})")
         return validated
 
-    def recommend(self, query, user_id=None, top_k=3):
-        if VERBOSE: print(f"🚀 Iniciando recomendación multi-perspectiva (EDNM) para: '{query}'")
+    def recommend(self, query, user_id=None, top_k=3, research_data=None):
+        """
+        Calcula recomendaciones híbridas integrando RAG y Filtrado Colaborativo.
+        Si se provee research_data, se usa para el contexto científico.
+        """
+        self.execution_log = [] # Reset log for new run
         
-        # 1. Weights
+        # 0. Pipeline Header
+        header = f"""
+======================================================================
+PIPELINE DE RECOMENDACIÓN EJECUTADO
+======================================================================
+▶️ Iniciando procesamiento técnico...
+
+--- Información del Sistema ---
+Items en DB: {self.system_metadata['df_items']}
+Columnas: {', '.join(self.system_metadata['df_cols'])}
+"""
+        if self.system_metadata['matrix_active']:
+            header += f"Matriz CF: {self.system_metadata['dimensions']} (Sparsity: {self.system_metadata['sparsity']:.2f}%)\n"
+        
+        self._log("INICIO", header)
+        self._log("RECH_DATA", f"--- Datos de Investigación ---\n{research_data if research_data else 'Extrayendo automáticamente...'}")
+
+        # 1. Extraction of parameters
+        if research_data:
+            self.set_research_context(research_data)
+            search_query = f"{research_data.get('Learning_Objective', '')} {research_data.get('Cognitive_Function', '')} {query}".strip()
+        else:
+            self.extract_research_parameters(query)
+            search_query = query
+            
+        if VERBOSE:
+            print(f"🚀 Iniciando recomendación multi-perspectiva (EDNM) para: '{query}'")
+            if research_data: print(f"   🧬 Modo Experto activado: Objetivo '{self.current_research_context.get('Learning_Objective')}'")
+
+        # 2. Weights
         weights = calculate_weights(user_id, self.ratings_df)
+        self._log("Pesos de Recomendación", f"User: {user_id}\nPesos: {weights}")
         
         # Perspectives matching the database labels (element, dynamic, narrative, mechanic)
         perspectives = ['element', 'dynamic', 'narrative', 'mechanic']
@@ -149,15 +277,29 @@ class RecommenderOrchestrator:
         for p in perspectives:
             if VERBOSE: print(f"   🔍 Procesando perspectiva: {p.upper()}...")
             
-            # Filtered retrieval: only items of type 'p'
-            candidates = rag_retrieval(query, self.collection, top_k=20, where={"item_type": p})
+            # Filtered retrieval using the enriched search_query
+            candidates = rag_retrieval(search_query, self.collection, top_k=20, where={"item_type": p})
+            
+            # Format candidate table for logs
+            cand_table = "| ID | Título | Sim. |\n| :--- | :--- | :---: |\n"
+            for _, row in candidates.head(5).iterrows():
+                # Escaping pipes in title if any
+                clean_title = str(row['title']).replace('|', '&#124;')
+                cand_table += f"| {row['id']} | {clean_title} | {row['similarity']:.4f} |\n"
+            
+            self._log(f"CANDIDATOS: {p.upper()}", f"Top 5 ítems recuperados de ChromaDB:\n\n{cand_table}")
             
             if candidates.empty:
                 if VERBOSE: print(f"      ⚠️ No se encontraron candidatos de tipo '{p}'")
                 continue
                 
             # We add 's' for the prompt context if needed, but the label 'p' is used for validation
-            llm_results = self.query_all_llms(query, candidates, perspective=p+'s' if not p.endswith('s') else p)
+            llm_results = self.query_all_llms(
+                query, 
+                candidates, 
+                perspective=p+'s' if not p.endswith('s') else p,
+                research_context=self.current_research_context
+            )
             validated = self.semantic_validation(llm_results, query, target_item_type=p)
             
             # Sort by relevance and take top 3 for this perspective
@@ -185,8 +327,43 @@ class RecommenderOrchestrator:
                         'llm_reasoning': "Recommended by similar users profile."
                     })
 
-        # 5. Final Ranking & Strict Grouping by Category
+        # 5. Final Ranking & Intermediate Dimension Logs
         ranked = calculate_ranking_rrf(all_validated, weights)
+        
+        # Log Granular Rankings per Dimension
+        dim_logs = "### RANKING POR DIMENSIÓN (EDNM)\n\n"
+        for p in perspectives:
+            dim_items = [r for r in ranked if r['perspective'] == p]
+            if not dim_items: continue
+            
+            dim_table = f"**{p.upper()}**\n\n| Título | Score RRF | Origen |\n| :--- | :---: | :---: |\n"
+            for r in dim_items[:5]:
+                clean_title = str(r['title']).replace('|', '&#124;')
+                dim_table += f"| {clean_title} | {r['rank_score']:.4f} | {r['llm_source']} |\n"
+            dim_logs += dim_table + "\n"
+        
+        self._log("RANKING DETALLADO", dim_logs)
+
+        # Global Ranking Table
+        rank_table = "| Perspectiva | Título | Score RRF | Origen |\n| :--- | :--- | :---: | :---: |\n"
+        for r in ranked[:10]:
+            clean_title = str(r['title']).replace('|', '&#124;')
+            rank_table += f"| {r['perspective']} | {clean_title} | {r['rank_score']:.4f} | {r['llm_source']} |\n"
+        self._log("RANKING FINAL", f"Top 10 ítems globales después de RRF:\n\n{rank_table}")
+        
+        # 6. Architecture Comparison (Benchmarking) - Performance Context
+        comparison_table = """
+### COMPARACIÓN DE ARQUITECTURAS - SERIOUS GAMES (Último Benchmark)
+
+| Configuración | P@10 | nDCG@10 | Hits | Latencia |
+| :--- | :---: | :---: | :---: | :---: |
+| Single LLM | 0.300 | 0.265 | 3 | 15.3 s |
+| Multi-LLM | 0.300 | 0.265 | 3 | 21.7 s |
+| **Multi-LLM+FCD** | **0.300** | **0.265** | **3** | **13.8 s** |
+
+*Nota: La configuración actual (Multi-LLM+FCD) es la optimizada para producción.*
+"""
+        self._log("COMPARATIVA", comparison_table)
         
         # Enforce grouping: Dynamic -> Element -> Mechanic -> Narrative
         category_priority = {'dynamic': 0, 'element': 1, 'mechanic': 2, 'narrative': 3, 'social': 4}
@@ -200,81 +377,121 @@ class RecommenderOrchestrator:
             print(f"✅ Resultados finales agrupados: {len(final_ranked)} ítems.")
             
         return final_ranked
+    def _format_winner_for_prompt(self, val):
+        """Convierte un resultado JSON de perspectiva en texto legible para el prompt de síntesis."""
+        if not val or val == 'N/A' or val == '...':
+            return "No disponible"
+        try:
+            import json
+            # Intentar limpiar si viene con markdown
+            val_clean = str(val).replace('```json', '').replace('```', '').strip()
+            if (val_clean.startswith('[') and val_clean.endswith(']')) or (val_clean.startswith('{') and val_clean.endswith('}')):
+                data = json.loads(val_clean)
+                if isinstance(data, list):
+                    items = [item.get('recommendation', item.get('title', '')) for item in data]
+                    return ", ".join([i for i in items if i])
+                elif isinstance(data, dict):
+                    return data.get('recommendation', data.get('title', str(data)))
+        except:
+            pass
+        return str(val)
 
     def generate_proposal(self, ranked_results, query):
         if VERBOSE: print("\n🎨 Generando propuesta de diseño integrada...")
         
-        # Extract best of each category
-        winners = {}
+        # 1. Extract best of each category
+        selected_winners = {}
         perspectives = ['element', 'dynamic', 'narrative', 'mechanic']
         
         for p in perspectives:
-            # Find the best item for this perspective
             best = next((x for x in ranked_results if x.get('perspective') == p), None)
             if best:
-                winners[p] = f"{best['title']} - {best['llm_reasoning']}"
+                selected_winners[p] = f"{best['title']} - {best['llm_reasoning']}"
                 if VERBOSE: print(f"   🏆 Ganador {p.upper()}: {best['title']}")
 
-        if not winners:
+        if not selected_winners:
             return {"error": "No hay suficientes componentes validados para generar una propuesta."}
 
-        # 4. Generate synthesis with all configured models
-        # Ensure we have defaults if a category was missed
-        synthesis_prompt = PROMPT_TEMPLATES['synthesis'].format(
-            element=winners.get('element', 'N/A'),
-            dynamic=winners.get('dynamic', 'N/A'),
-            narrative=winners.get('narrative', 'N/A'),
-            mechanic=winners.get('mechanic', 'N/A'),
-            query=query
+        # 2. Extract research context if not present
+        if not hasattr(self, 'current_research_context') or not self.current_research_context:
+            self.extract_research_parameters(query)
+
+        ctx = self.current_research_context
+        
+        # 3. Build the specific research master prompt
+        master_prompt = PROMPT_TEMPLATES['research_master_template'].format(
+            Sector=ctx.get('Sector', 'General'),
+            Context=ctx.get('Context', 'N/A'),
+            Serious_Game_Type=ctx.get('Serious_Game_Type', 'Adventure'),
+            Users=ctx.get('Users', 'Players'),
+            Learning_Objective=ctx.get('Learning_Objective', query),
+            Cognitive_Function=ctx.get('Cognitive_Function', 'General'),
+            Capability=ctx.get('Capability', 'General'),
+            VARK_Style=ctx.get('VARK_Style', 'Visual/Aural'),
+            Emotion=ctx.get('Emotion', 'Engagement'),
+            Motivation=ctx.get('Motivation', 'Intrinsic'),
+            Learning_Activities=ctx.get('Learning_Activities', 'Gameplay'),
+            Learning_Resources=ctx.get('Learning_Resources', 'Game elements'),
+            Basic_Mechanics=ctx.get('Basic_Mechanics', 'Interaction')
         )
         
+        synthesis_prompt = PROMPT_TEMPLATES['synthesis'].format(
+            master_prompt=master_prompt,
+            element=self._format_winner_for_prompt(selected_winners.get('element', 'N/A')),
+            dynamic=self._format_winner_for_prompt(selected_winners.get('dynamic', 'N/A')),
+            narrative=self._format_winner_for_prompt(selected_winners.get('narrative', 'N/A')),
+            mechanic=self._format_winner_for_prompt(selected_winners.get('mechanic', 'N/A')),
+            Context=ctx.get('Context', 'Gaming'),
+            Cognitive_Function=ctx.get('Cognitive_Function', 'General'),
+            Sector=ctx.get('Sector', 'General'),
+            Users=ctx.get('Users', 'Players'),
+            Learning_Objective=ctx.get('Learning_Objective', query),
+            Emotion=ctx.get('Emotion', 'Engagement'),
+            VARK_Style=ctx.get('VARK_Style', 'Multi-modal')
+        )
+
         raw_proposals = self.query_all_llms(synthesis_prompt, [], json_mode=False)
         
-        # Clean and standardize proposals (detecting accidental JSON or markdown blocks)
         clean_proposals = {}
-        for model_name, text in raw_proposals.items():
-            if not isinstance(text, str):
-                text = str(text)
+        import re
+        import json
+        for name, text in raw_proposals.items():
+            if not text: 
+                clean_proposals[name] = "Error: Sin respuesta del modelo."
+                continue
             
-            # 1. Strip markdown code blocks
-            import re
+            # 1. Quitar etiquetas de bloque de código markdown redundantes
             text = re.sub(r'```[a-zA-Z]*\n', '', text)
-            text = text.replace('```', '')
-            text = text.strip()
+            text = text.replace('```', '').strip()
             
-            # 2. Auto-fix JSON-formatted responses (common in models like Gemini)
-            if (text.startswith('[') and text.endswith(']')) or (text.startswith('{') and text.endswith('}')):
-                import json
+            # 2. Extractor de JSON robusto (busca el bloque más grande entre [] o {})
+            json_pattern = r'(\[[\s\S]*\]|\{[\s\S]*\})'
+            match = re.search(json_pattern, text)
+            
+            if match:
+                potential_json = match.group(0)
                 try:
-                    parsed = json.loads(text)
+                    parsed = json.loads(potential_json)
                     new_text = ""
-                    # Case A: List of dicts
+                    # Caso A: Lista de recomendaciones
                     if isinstance(parsed, list):
                         new_text = "# 🎮 PROPUESTA DE DISEÑO ESTRATÉGICO\n\n"
                         for item in parsed:
                             if isinstance(item, dict):
-                                # Try to find a title/heading in multiple languages/keys
                                 head = item.get('recommendation', item.get('title', item.get('titulo', item.get('heading', item.get('recomendacion', '')))))
                                 body = item.get('description', item.get('content', item.get('descripcion', item.get('contenido', item.get('body', '')))))
-                                
-                                # If still empty, use the first available values
                                 if not head and item.values():
                                     head = list(item.values())[0] if not head else head
                                     if len(item.values()) > 1 and not body:
                                         body = list(item.values())[1]
-                                
                                 new_text += f"### {head}\n{body}\n\n"
                             else:
                                 new_text += f"{item}\n\n"
-                    # Case B: Object with sections (Gemini style)
                     elif isinstance(parsed, dict):
                         title = parsed.get('title', parsed.get('propuesta', parsed.get('titulo', 'PROPUESTA DE JUEGO')))
                         new_text = f"# 🎮 {title}\n\n"
-                        
-                        # Handle "sections" key
                         sections = parsed.get('sections', [])
                         if not sections and 'secciones' in parsed: sections = parsed['secciones']
-                        
                         if isinstance(sections, list):
                             for s in sections:
                                 if isinstance(s, dict):
@@ -284,19 +501,54 @@ class RecommenderOrchestrator:
                                 else:
                                     new_text += f"{s}\n\n"
                         else:
-                            # Direct key-value display for flat objects
                             for k, v in parsed.items():
                                 if k.lower() not in ['title', 'sections', 'propuesta', 'titulo', 'secciones']:
                                     new_text += f"### {k.replace('_', ' ').upper()}\n{v}\n\n"
-                    
                     if new_text:
-                        text = new_text
+                        # Reemplazo in-place para mantener el texto narrativo alrededor
+                        text = text.replace(potential_json, "\n" + new_text)
                 except:
                     pass
+            clean_proposals[name] = text
+
+        # 5. BERTScore Quality Evaluation
+        quality_metrics = None
+        best_model_data = None
+        
+        if EVALUATE_QUALITY:
+            if VERBOSE: print("\n📏 Calculando métricas de calidad (BERTScore)...")
             
-            clean_proposals[model_name] = text
+            # Generar el texto de referencia "experto" dinámicamente
+            reference_text = f"""
+            Título del juego: Propuesta de Juego Serio para {ctx.get('Sector', 'General')}.
+            El juego serio gamificado debe permitir a los usuarios {ctx.get('Users', 'Players')} 
+            lograr el objetivo de {ctx.get('Learning_Objective', query)} y entrenarse en la 
+            función cognitiva {ctx.get('Cognitive_Function', 'General')} para mejorar la 
+            capacidad {ctx.get('Capability', 'General')}. 
+            Debe incluir mecánicas de {ctx.get('Basic_Mechanics', 'Interacción')} y estar 
+            alineado con la emoción {ctx.get('Emotion', 'Engagement')}.
+            """
+            
+            self._log("CALIDAD (REF)", f"Texto de referencia para BERTScore:\n\n{reference_text}")
+            
+            quality_metrics_df = calculate_berts_metrics(
+                reference_text, 
+                clean_proposals, 
+                lang=BERT_SCORE_LANG, 
+                model_type=BERT_SCORE_MODEL
+            )
+            
+            if not quality_metrics_df.empty:
+                quality_metrics = quality_metrics_df.to_dict(orient='records')
+                best_name, best_f1 = get_best_model_info(quality_metrics_df)
+                best_model_data = {"model": best_name, "f1_score": best_f1}
+                if VERBOSE: print(f"   🏆 Mejor salida según BERTScore-F1: {best_name} ({best_f1:.4f})")
             
         return {
-            "winners": winners,
-            "proposals": clean_proposals
+            "winners": selected_winners,
+            "proposals": clean_proposals,
+            "quality_metrics": quality_metrics,
+            "best_proposal": best_model_data,
+            "research_context": self.current_research_context,
+            "execution_log": self.execution_log
         }

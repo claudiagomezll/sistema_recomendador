@@ -9,7 +9,7 @@ class BaseLLMProvider:
         self.model_name = model_name
         self.config = kwargs
 
-    def generate(self, prompt, max_tokens=1000, temperature=0.7):
+    def generate(self, prompt, max_tokens=1000, temperature=0.7, json_mode=True):
         raise NotImplementedError("Subclass must implement generate()")
 
 class OpenAIProvider(BaseLLMProvider):
@@ -20,16 +20,17 @@ class OpenAIProvider(BaseLLMProvider):
             base_url=kwargs.get('base_url')
         )
 
-    def generate(self, prompt, max_tokens=1000, temperature=0.7):
+    def generate(self, prompt, max_tokens=1000, temperature=0.7, json_mode=True):
         response = self.client.chat.completions.create(
             model=self.model_name,
             messages=[{'role': 'user', 'content': prompt}],
             max_tokens=max_tokens,
-            temperature=temperature
+            temperature=temperature,
+            response_format={'type': 'json_object'} if json_mode and "gpt-4" in self.model_name else None
         )
         text = response.choices[0].message.content
         if not text:
-            return '[]'
+            return '[]' if json_mode else ""
         return re.sub(r'```json\s?|```', '', text).strip()
 
 class AnthropicProvider(BaseLLMProvider):
@@ -37,7 +38,7 @@ class AnthropicProvider(BaseLLMProvider):
         super().__init__(model_name, **kwargs)
         self.client = Anthropic(api_key=kwargs.get('api_key'))
 
-    def generate(self, prompt, max_tokens=1000, temperature=0.7):
+    def generate(self, prompt, max_tokens=1000, temperature=0.7, json_mode=True):
         response = self.client.messages.create(
             model=self.model_name,
             max_tokens=max_tokens,
@@ -46,7 +47,7 @@ class AnthropicProvider(BaseLLMProvider):
         )
         text = response.content[0].text
         if not text:
-            return '[]'
+            return '[]' if json_mode else ""
         return re.sub(r'```json\s?|```', '', text).strip()
 
 class GoogleProvider(BaseLLMProvider):
@@ -54,21 +55,28 @@ class GoogleProvider(BaseLLMProvider):
         super().__init__(model_name, **kwargs)
         self.client = genai.Client(api_key=kwargs.get('api_key'))
 
-    def generate(self, prompt, max_tokens=8192, temperature=0.1):
+    def generate(self, prompt, max_tokens=8192, temperature=0.1, json_mode=True):
         effective_tokens = max(max_tokens, 8192)
+        
+        config_args = {
+            'max_output_tokens': effective_tokens,
+            'temperature': temperature,
+        }
+        
+        if json_mode:
+            config_args['response_mime_type'] = 'application/json'
+            config_args['system_instruction'] = "Eres un exportador de datos JSON puro. No expliques, no razones, no pienses en voz alta. Genera directamente el JSON solicitado."
+        else:
+            config_args['system_instruction'] = "Eres un experto en diseño de juegos serios. Responde de forma narrativa y estructurada usando Markdown."
+
         response = self.client.models.generate_content(
             model=self.model_name,
             contents=prompt,
-            config=types.GenerateContentConfig(
-                max_output_tokens=effective_tokens,
-                temperature=temperature,
-                response_mime_type='application/json',
-                system_instruction="Eres un exportador de datos JSON puro. No expliques, no razones, no pienses en voz alta. Genera directamente el JSON solicitado."
-            )
+            config=types.GenerateContentConfig(**config_args)
         )
         text = response.text
         if not text:
-            return '[]'
+            return '[]' if json_mode else ""
         clean_text = re.sub(r'```json\s?|```', '', text).strip()
         return clean_text
 

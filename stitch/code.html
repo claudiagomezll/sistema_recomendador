@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Configuración de Diseño | The Technical Architect</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#007d8c",
+                        "surface-variant": "#313442",
+                        "on-primary-fixed-variant": "#003ab3",
+                        "surface-container-lowest": "#0a0e1a",
+                        "tertiary": "#00daf3",
+                        "on-secondary-fixed": "#000f5d",
+                        "inverse-surface": "#dfe2f3",
+                        "background": "#0f131f",
+                        "on-surface": "#dfe2f3",
+                        "error-container": "#93000a",
+                        "primary-fixed": "#dce1ff",
+                        "on-background": "#dfe2f3",
+                        "on-tertiary-fixed-variant": "#004f58",
+                        "surface": "#0f131f",
+                        "on-tertiary-fixed": "#001f24",
+                        "surface-container-high": "#262a37",
+                        "on-secondary-container": "#b1bbff",
+                        "on-surface-variant": "#c3c5d8",
+                        "inverse-primary": "#004ee8",
+                        "secondary": "#bbc3ff",
+                        "error": "#ffb4ab",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "outline-variant": "#434656",
+                        "on-primary": "#002780",
+                        "tertiary-fixed-dim": "#00daf3",
+                        "on-error": "#690005",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#2962ff",
+                        "surface-bright": "#353946",
+                        "surface-container-highest": "#313442",
+                        "on-secondary": "#001d93",
+                        "on-primary-fixed": "#001550",
+                        "secondary-container": "#0231de",
+                        "surface-tint": "#b6c4ff",
+                        "on-tertiary": "#00363d",
+                        "on-tertiary-container": "#e6fbff",
+                        "primary": "#b6c4ff",
+                        "surface-container": "#1b1f2c",
+                        "secondary-fixed": "#dee0ff",
+                        "on-secondary-fixed-variant": "#002ccd",
+                        "inverse-on-surface": "#2c303d",
+                        "on-primary-container": "#f7f5ff",
+                        "surface-container-low": "#171b28",
+                        "secondary-fixed-dim": "#bbc3ff",
+                        "surface-dim": "#0f131f",
+                        "tertiary-fixed": "#9cf0ff",
+                        "outline": "#8d90a2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        body {
+            background-color: #0f131f;
+            color: #dfe2f3;
+            font-family: 'Manrope', sans-serif;
+        }
+        .headline-font {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f131f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262a37;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="selection:bg-tertiary/30 selection:text-tertiary">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0f131f]/80 backdrop-blur-xl flex items-center justify-between px-8 py-4 w-full shadow-[0_40px_40px_rgba(182,196,255,0.08)]">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold text-white tracking-tighter headline-font">ConfiguracióndeDiseño</span>
+</div>
+<div class="hidden md:flex items-center gap-8">
+<nav class="flex gap-6">
+<a class="text-[#2962ff] font-bold border-b-2 border-[#2962ff] pb-1 headline-font text-sm" href="#">Configuración</a>
+<a class="text-[#c3c5d8] hover:bg-[#262a37] transition-colors duration-300 px-3 py-1 rounded-md text-sm headline-font" href="#">Explorar</a>
+<a class="text-[#c3c5d8] hover:bg-[#262a37] transition-colors duration-300 px-3 py-1 rounded-md text-sm headline-font" href="#">Historial</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-[#353946] border border-outline/20 px-4 py-2 rounded-full text-sm font-semibold text-on-surface hover:bg-[#262a37] transition-all duration-300 scale-95 active:duration-150">
+                Modo Simple
+            </button>
+<button class="bg-gradient-to-r from-[#2962ff] to-[#0231de] px-6 py-2 rounded-full text-white font-bold text-sm shadow-lg shadow-primary-container/20 hover:opacity-90 transition-all scale-95 active:duration-150">
+                Generar Propuesta
+            </button>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#171b28] pt-24 hidden lg:flex flex-col">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border border-primary/20">
+<img class="w-full h-full object-cover" data-alt="professional headshot of a male technical architect in a dark studio setting with cool cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmVUJXKJH0P23tBHmQAssQ_0XaL4lZi2-Z2if6oyi6_8G6m9s9_NfFv9xnyausZWrIHyxlWvHFPWdBn2hk_WbYplhGd4OOvhCCGnoodEZ85kcyGQ4B0MYkn3aa9xca_cZyMZ1behLWs219gGMw3qakluSe6Y4ECH3M88hiWa2Zq9xWASCbP1AiPfRWCknfs3610DEm_0lFpXkdJGzJ2PjxVfDATO2OZd4xISvxJYK3_yw82ApaMd3DDh9Vr22SO824cCxA4gQ2Z_8"/>
+</div>
+<div>
+<p class="text-white font-bold text-sm headline-font">Arquitecto</p>
+<p class="text-[#c3c5d8] text-xs opacity-70">Technical Expert</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1 px-2">
+<a class="flex items-center gap-4 px-4 py-3 text-white bg-gradient-to-r from-[#2962ff] to-[#0231de] rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined active-icon" data-icon="settings_input_component">settings_input_component</span>
+<span class="text-xs font-bold uppercase tracking-wider headline-font">Contexto</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#c3c5d8] opacity-70 hover:opacity-100 hover:bg-[#262a37] rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="text-xs font-bold uppercase tracking-wider headline-font">Perfil</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#c3c5d8] opacity-70 hover:opacity-100 hover:bg-[#262a37] rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="domain">domain</span>
+<span class="text-xs font-bold uppercase tracking-wider headline-font">Sector</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#c3c5d8] opacity-70 hover:opacity-100 hover:bg-[#262a37] rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="text-xs font-bold uppercase tracking-wider headline-font">Objetivos</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#c3c5d8] opacity-70 hover:opacity-100 hover:bg-[#262a37] rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="sports_esports">sports_esports</span>
+<span class="text-xs font-bold uppercase tracking-wider headline-font">Mecánicas</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-[#c3c5d8] opacity-70 hover:opacity-100 hover:bg-[#262a37] rounded-lg transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span class="text-xs font-bold uppercase tracking-wider headline-font">Propuesta</span>
+</a>
+</nav>
+<div class="mt-auto p-6">
+<div class="p-4 rounded-xl bg-surface-container-high border border-outline-variant/10">
+<p class="text-xs text-[#c3c5d8] mb-2">Proyecto Actual</p>
+<p class="text-sm font-bold text-white headline-font mb-4">Módulo Pedagógico Avanzado</p>
+<div class="w-full bg-surface-container-lowest h-1.5 rounded-full">
+<div class="bg-tertiary h-1.5 rounded-full w-2/3 shadow-[0_0_10px_rgba(0,218,243,0.4)]"></div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="lg:ml-64 pt-24 pb-12 px-8 min-h-screen bg-surface">
+<div class="max-w-6xl mx-auto">
+<header class="mb-12">
+<h1 class="text-4xl font-extrabold text-white headline-font tracking-tight mb-2">Diseño de Experiencia</h1>
+<p class="text-on-surface-variant max-w-2xl leading-relaxed">Configure los parámetros técnicos de su propuesta pedagógica. La inteligencia artificial utilizará este contexto para estructurar mecánicas coherentes y objetivos medibles.</p>
+</header>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Card 1: Context & User -->
+<section class="md:col-span-12 lg:col-span-8 bg-surface-container-low rounded-xl p-8 border border-outline-variant/5 shadow-xl">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+</div>
+<h2 class="text-xl font-bold text-white headline-font">Contexto &amp; Usuario</h2>
+</div>
+<div class="space-y-6">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Contexto de Investigación</label>
+<textarea class="w-full bg-surface-container-highest border-0 rounded-lg p-4 text-on-surface placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-tertiary/50 min-h-[120px] transition-all" placeholder="Describa el entorno, desafíos y marco teórico de la investigación..."></textarea>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Perfil de Usuario</label>
+<textarea class="w-full bg-surface-container-highest border-0 rounded-lg p-4 text-on-surface placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-tertiary/50 min-h-[100px] transition-all" placeholder="Características psicográficas, demográficas y necesidades específicas del usuario..."></textarea>
+</div>
+</div>
+</section>
+<!-- Card 2: Core Details -->
+<section class="md:col-span-12 lg:col-span-4 bg-surface-container-low rounded-xl p-8 border border-outline-variant/5 shadow-xl">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+</div>
+<h2 class="text-xl font-bold text-white headline-font">Detalles Base</h2>
+</div>
+<div class="space-y-6">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Sector</label>
+<select class="w-full bg-surface-container-highest border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-tertiary/50">
+<option>Educación Superior</option>
+<option>Corporativo / RRHH</option>
+<option>Salud &amp; Bienestar</option>
+<option>Retail / Ventas</option>
+</select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Usuarios Target</label>
+<input class="w-full bg-surface-container-highest border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-tertiary/50" placeholder="Ej: Estudiantes de Ing." type="text"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Capacidad a Desarrollar</label>
+<input class="w-full bg-surface-container-highest border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-tertiary/50" placeholder="Competencia específica" type="text"/>
+</div>
+</div>
+</section>
+<!-- Bento Style for smaller cards -->
+<!-- Card 3: Learning Objectives -->
+<div class="md:col-span-6 lg:col-span-6 bg-surface-container-low rounded-xl p-8 border border-outline-variant/5 shadow-xl relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-primary/10 transition-colors"></div>
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-secondary/10 text-secondary">
+<span class="material-symbols-outlined" data-icon="ads_click">ads_click</span>
+</div>
+<h2 class="text-xl font-bold text-white headline-font">Objetivos de Aprendizaje</h2>
+</div>
+<div class="grid grid-cols-1 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Objetivo Principal</label>
+<input class="w-full bg-surface-container-highest border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-tertiary/50" placeholder="¿Qué debe lograr el usuario?" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Función Cognitiva</label>
+<select class="bg-surface-container-highest border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-tertiary/50">
+<option>Análisis</option>
+<option>Memorización</option>
+<option>Síntesis</option>
+</select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Emoción Diana</label>
+<select class="bg-surface-container-highest border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-tertiary/50">
+<option>Curiosidad</option>
+<option>Reto</option>
+<option>Satisfacción</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: Style & Game -->
+<div class="md:col-span-6 lg:col-span-6 bg-surface-container-low rounded-xl p-8 border border-outline-variant/5 shadow-xl">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-tertiary-container/20 text-tertiary">
+<span class="material-symbols-outlined" data-icon="sports_esports">sports_esports</span>
+</div>
+<h2 class="text-xl font-bold text-white headline-font">Estilo &amp; Juego</h2>
+</div>
+<div class="grid grid-cols-1 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Tipo de Juego</label>
+<div class="grid grid-cols-3 gap-2">
+<button class="py-2 bg-surface-container-highest rounded-lg text-xs font-bold border border-outline-variant/10 text-on-surface-variant hover:text-white hover:border-tertiary/40 transition-all">Narrativo</button>
+<button class="py-2 bg-primary-container text-white rounded-lg text-xs font-bold border border-primary/20 shadow-lg shadow-primary-container/20">Competitivo</button>
+<button class="py-2 bg-surface-container-highest rounded-lg text-xs font-bold border border-outline-variant/10 text-on-surface-variant hover:text-white hover:border-tertiary/40 transition-all">Sandbox</button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Estilo VARK</label>
+<select class="bg-surface-container-highest border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-tertiary/50">
+<option>Visual</option>
+<option>Auditivo</option>
+<option>Kinestésico</option>
+</select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Motivación</label>
+<select class="bg-surface-container-highest border-0 rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-tertiary/50">
+<option>Logro</option>
+<option>Social</option>
+<option>Inmersión</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 5: Activities & Resources -->
+<section class="md:col-span-12 lg:col-span-7 bg-surface-container-low rounded-xl p-8 border border-outline-variant/5 shadow-xl">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-on-secondary-container/20 text-secondary">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+</div>
+<h2 class="text-xl font-bold text-white headline-font">Actividades &amp; Recursos</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Actividades</label>
+<div class="space-y-3">
+<div class="flex items-center gap-3 p-3 bg-surface-container-highest rounded-lg">
+<span class="material-symbols-outlined text-sm text-tertiary" data-icon="check_circle">check_circle</span>
+<span class="text-sm">Talleres Prácticos</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface-container-highest rounded-lg">
+<span class="material-symbols-outlined text-sm text-tertiary" data-icon="check_circle">check_circle</span>
+<span class="text-sm">Role Playing</span>
+</div>
+<button class="flex items-center justify-center gap-2 w-full p-2 border-2 border-dashed border-outline-variant/20 rounded-lg text-xs font-bold text-on-surface-variant hover:text-tertiary hover:border-tertiary/40 transition-all">
+<span class="material-symbols-outlined text-xs" data-icon="add">add</span> Añadir Actividad
+                                </button>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md">Recursos</label>
+<div class="space-y-3">
+<div class="flex items-center gap-3 p-3 bg-surface-container-highest rounded-lg">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="article">article</span>
+<span class="text-sm">Guías PDF Interactivas</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface-container-highest rounded-lg">
+<span class="material-symbols-outlined text-sm text-primary" data-icon="video_library">video_library</span>
+<span class="text-sm">Simulaciones VR</span>
+</div>
+<button class="flex items-center justify-center gap-2 w-full p-2 border-2 border-dashed border-outline-variant/20 rounded-lg text-xs font-bold text-on-surface-variant hover:text-primary hover:border-primary/40 transition-all">
+<span class="material-symbols-outlined text-xs" data-icon="add">add</span> Añadir Recurso
+                                </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Card 6: Mechanics -->
+<section class="md:col-span-12 lg:col-span-5 bg-surface-container-low rounded-xl p-8 border border-outline-variant/5 shadow-xl overflow-hidden relative">
+<div class="absolute -right-12 -bottom-12 opacity-10">
+<span class="material-symbols-outlined text-[160px]" data-icon="smart_toy">smart_toy</span>
+</div>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 flex items-center justify-center rounded-lg bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined" data-icon="extension">extension</span>
+</div>
+<h2 class="text-xl font-bold text-white headline-font">Mecánicas Básicas</h2>
+</div>
+<p class="text-xs font-bold uppercase tracking-widest text-[#c3c5d8] label-md mb-4">Gameplay Bricks Model</p>
+<div class="space-y-4">
+<div class="p-4 bg-surface-container-highest rounded-xl border-l-4 border-primary">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-bold text-white headline-font">Reto Progresivo</span>
+<span class="px-2 py-0.5 bg-primary/10 text-primary text-[10px] rounded uppercase font-bold">Nivel 1</span>
+</div>
+<p class="text-xs text-on-surface-variant">Ajuste dinámico de dificultad basado en el performance del usuario.</p>
+</div>
+<div class="p-4 bg-surface-container-highest rounded-xl border-l-4 border-tertiary">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-bold text-white headline-font">Feedback Inmediato</span>
+<span class="px-2 py-0.5 bg-tertiary/10 text-tertiary text-[10px] rounded uppercase font-bold">Nivel 2</span>
+</div>
+<p class="text-xs text-on-surface-variant">Sistemas de micro-recompensas y señales visuales de progreso.</p>
+</div>
+<button class="w-full py-4 rounded-xl border border-outline-variant/20 bg-surface-container-high text-sm font-bold hover:bg-surface-bright transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                            Configurar Gameplay Bricks
+                        </button>
+</div>
+</section>
+</div>
+<!-- Footer Action -->
+<footer class="mt-16 flex justify-end items-center gap-6">
+<div class="text-right hidden sm:block">
+<p class="text-xs text-on-surface-variant font-bold uppercase tracking-widest">Estado del Borrador</p>
+<p class="text-sm text-tertiary headline-font">Listo para procesamiento • 85% Completo</p>
+</div>
+<button class="group flex items-center gap-3 bg-gradient-to-r from-[#2962ff] to-[#0231de] px-10 py-5 rounded-full text-white font-extrabold text-lg shadow-[0_20px_50px_rgba(41,98,255,0.3)] hover:shadow-[0_20px_70px_rgba(41,98,255,0.5)] transition-all transform hover:-translate-y-1 active:scale-95">
+                    Generar Propuesta
+                    <span class="material-symbols-outlined transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</footer>
+</div>
+</main>
+<!-- Visual Decor Elements -->
+<div class="fixed top-1/4 -right-24 w-96 h-96 bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="fixed bottom-1/4 -left-24 w-80 h-80 bg-tertiary/5 blur-[100px] rounded-full pointer-events-none"></div>
+</body></html>
